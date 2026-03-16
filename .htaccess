@@ -1,0 +1,28 @@
+# Segurança: bloqueia acesso direto a arquivos sensíveis
+<FilesMatch "(config\.php|\.sql|\.csv)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Bloqueia acesso à pasta scripts (exceto via CLI)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Bloqueia acesso à pasta scripts pelo navegador
+    RewriteRule ^scripts/ - [F,L]
+</IfModule>
+
+# Charset UTF-8
+AddDefaultCharset UTF-8
+
+# Compressão gzip
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
+</IfModule>
+
+# Cache de assets estáticos
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
