@@ -2,11 +2,8 @@
 /**
  * Script de importação do CSV para MySQL
  *
- * Uso via terminal (SSH na Locaweb):
+ * Uso via terminal (SSH):
  *   php import_csv.php /caminho/para/arquivo.csv
- *
- * Ou via navegador (para arquivos menores):
- *   Acesse: https://seusite.com.br/scripts/import_csv.php?file=../dados/arquivo.csv
  *
  * IMPORTANTE: Remova ou proteja este arquivo após a importação!
  */
@@ -16,7 +13,6 @@ ini_set('memory_limit', '512M');
 
 require_once __DIR__ . '/../config.php';
 
-// Determina o arquivo CSV
 if (php_sapi_name() === 'cli') {
     if ($argc < 2) {
         echo "Uso: php import_csv.php <caminho_do_csv>\n";
@@ -39,83 +35,65 @@ if (!file_exists($csvFile)) {
 
 $pdo = getConnection();
 
-// Detecta o delimitador (vírgula ou ponto-e-vírgula)
+// Detecta delimitador
 $firstLine = fgets(fopen($csvFile, 'r'));
 $delimiter = (substr_count($firstLine, ';') > substr_count($firstLine, ',')) ? ';' : ',';
-
 echo "Delimitador detectado: '$delimiter'\n";
-echo "Iniciando importação...\n\n";
 
 $handle = fopen($csvFile, 'r');
-if ($handle === false) {
-    echo "Erro ao abrir arquivo.\n";
-    exit(1);
-}
 
-// Lê o cabeçalho
+// Lê cabeçalho e normaliza
 $header = fgetcsv($handle, 0, $delimiter);
 $header = array_map(function ($col) {
-    // Normaliza nomes das colunas: remove acentos, lowercase, underscores
     $col = trim($col);
     $col = mb_strtolower($col, 'UTF-8');
     $col = str_replace(' ', '_', $col);
+    // Remove acentos
     $col = preg_replace('/[^a-z0-9_]/', '', iconv('UTF-8', 'ASCII//TRANSLIT', $col));
     return $col;
 }, $header);
 
-echo "Colunas encontradas no CSV:\n";
-echo implode(' | ', $header) . "\n\n";
+echo "Colunas no CSV: " . implode(' | ', $header) . "\n\n";
 
-// Mapeamento das colunas do CSV para as colunas da tabela
-// Ajuste este mapeamento conforme as colunas do seu CSV
+// Mapeamento das colunas do CSV → banco
 $columnMap = [
-    'safra'          => ['safra', 'ano_safra', 'ano', 'season', 'crop_year'],
-    'cultura'        => ['cultura', 'crop', 'tipo_cultura', 'especie'],
-    'cultivar'       => ['cultivar', 'variedade', 'variety', 'nome_cultivar'],
-    'estado'         => ['estado', 'uf', 'state', 'sigla_uf'],
-    'municipio'      => ['municipio', 'cidade', 'city', 'nome_municipio'],
-    'regiao'         => ['regiao', 'region', 'macrorregiao'],
-    'area_plantada'  => ['area_plantada', 'area', 'hectares', 'area_ha'],
-    'produtividade'  => ['produtividade', 'yield', 'prod_ha', 'kg_ha'],
-    'producao'       => ['producao', 'production', 'producao_total', 'toneladas'],
-    'data_plantio'   => ['data_plantio', 'plantio', 'planting_date', 'dt_plantio'],
-    'data_colheita'  => ['data_colheita', 'colheita', 'harvest_date', 'dt_colheita'],
-    'observacoes'    => ['observacoes', 'obs', 'notas', 'observacao', 'notes'],
+    'safra'             => ['safra', 'ano_safra', 'crop_year'],
+    'especie'           => ['especie', 'especies', 'species', 'cultura', 'crop'],
+    'categoria'         => ['categoria', 'category', 'cat'],
+    'cultivar'          => ['cultivar', 'variedade', 'variety'],
+    'municipio'         => ['municipio', 'cidade', 'city', 'nome_municipio'],
+    'uf'                => ['uf', 'estado', 'state', 'sigla_uf'],
+    'status_registro'   => ['status', 'status_registro', 'situacao'],
+    'data_plantio'      => ['data_do_plantio', 'data_plantio', 'plantio', 'dt_plantio'],
+    'data_colheita'     => ['data_de_colheita', 'data_colheita', 'colheita', 'dt_colheita'],
+    'area'              => ['area', 'area_plantada', 'hectares', 'area_ha'],
+    'producao_bruta'    => ['producao_bruta', 'prod_bruta', 'producao_real'],
+    'producao_estimada' => ['producao_estimada', 'prod_estimada', 'estimativa'],
 ];
 
-// Resolve o mapeamento
 $resolvedMap = [];
 foreach ($columnMap as $dbCol => $csvOptions) {
     foreach ($csvOptions as $opt) {
         $idx = array_search($opt, $header);
         if ($idx !== false) {
             $resolvedMap[$dbCol] = $idx;
-            echo "  $dbCol => coluna '$opt' (índice $idx)\n";
+            echo "  $dbCol => '$opt' (col $idx)\n";
             break;
         }
     }
 }
 
-echo "\n";
-
 if (empty($resolvedMap)) {
-    echo "AVISO: Nenhuma coluna mapeada automaticamente.\n";
-    echo "As colunas do seu CSV são: " . implode(', ', $header) . "\n";
-    echo "Ajuste o array \$columnMap neste script conforme seu CSV.\n\n";
-    echo "Importando todas as colunas na ordem em que aparecem...\n";
-
-    // Fallback: importa as primeiras colunas na ordem da tabela
-    $dbColumns = array_keys($columnMap);
-    for ($i = 0; $i < min(count($header), count($dbColumns)); $i++) {
-        $resolvedMap[$dbColumns[$i]] = $i;
-    }
+    echo "\nNenhuma coluna mapeada. Ajuste o \$columnMap.\n";
+    echo "Colunas disponíveis: " . implode(', ', $header) . "\n";
+    exit(1);
 }
 
-// Prepara o INSERT
+echo "\n";
+
 $dbCols = array_keys($resolvedMap);
 $placeholders = implode(',', array_fill(0, count($dbCols), '?'));
 $colNames = implode(',', $dbCols);
-
 $sql = "INSERT INTO dados_campo ($colNames) VALUES ($placeholders)";
 $stmt = $pdo->prepare($sql);
 
@@ -130,18 +108,17 @@ while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
     foreach ($resolvedMap as $dbCol => $csvIdx) {
         $val = isset($row[$csvIdx]) ? trim($row[$csvIdx]) : null;
 
-        // Trata valores vazios
         if ($val === '' || $val === '-' || $val === 'N/A') {
             $val = null;
         }
 
-        // Converte campos numéricos (troca vírgula por ponto)
-        if (in_array($dbCol, ['area_plantada', 'produtividade', 'producao']) && $val !== null) {
-            $val = str_replace('.', '', $val);  // Remove separador de milhar
-            $val = str_replace(',', '.', $val); // Troca vírgula decimal por ponto
+        // Números: troca formato BR por formato SQL
+        if (in_array($dbCol, ['area', 'producao_bruta', 'producao_estimada']) && $val !== null) {
+            $val = str_replace('.', '', $val);
+            $val = str_replace(',', '.', $val);
         }
 
-        // Trata datas no formato BR (dd/mm/aaaa)
+        // Datas BR (dd/mm/aaaa) → SQL (aaaa-mm-dd)
         if (in_array($dbCol, ['data_plantio', 'data_colheita']) && $val !== null) {
             if (preg_match('#^(\d{2})/(\d{2})/(\d{4})$#', $val, $m)) {
                 $val = "$m[3]-$m[2]-$m[1]";
@@ -157,15 +134,14 @@ while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
     } catch (PDOException $e) {
         $errors++;
         if ($errors <= 10) {
-            echo "Erro na linha $totalRows: " . $e->getMessage() . "\n";
+            echo "Erro linha $totalRows: " . $e->getMessage() . "\n";
         }
     }
 
-    // Commit em lotes para performance
     if ($totalRows % $batchSize === 0) {
         $pdo->commit();
         $pdo->beginTransaction();
-        echo "  Importadas $totalRows linhas...\n";
+        echo "  $totalRows linhas importadas...\n";
     }
 }
 
@@ -174,6 +150,6 @@ fclose($handle);
 
 echo "\n========================================\n";
 echo "Importação concluída!\n";
-echo "Total de linhas importadas: $totalRows\n";
+echo "Linhas importadas: $totalRows\n";
 echo "Erros: $errors\n";
 echo "========================================\n";
