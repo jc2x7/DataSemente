@@ -1,7 +1,11 @@
 /**
- * DataSemente - App principal
- * Dashboard gerencial com gráficos, mapa de calor, comparações e PDF
+ * DataSemente - App principal (Power BI style)
  */
+
+// Chart.js dark theme defaults
+Chart.defaults.color = '#8b8ca7';
+Chart.defaults.borderColor = '#2d2d44';
+Chart.defaults.font.family = "'Inter', sans-serif";
 
 const App = {
     currentPage: 1,
@@ -12,29 +16,47 @@ const App = {
     filterOptions: null,
 
     init() {
-        this.bindTabs();
+        this.bindSidebar();
         this.bindFilters();
         this.bindSort();
         this.bindMap();
         this.bindComparison();
         this.bindPDF();
-        this.loadFilters().then(() => {
-            this.applyFilters();
+        this.bindFilterToggle();
+        this.loadFilters().then(() => this.applyFilters());
+    },
+
+    // ===== SIDEBAR NAV =====
+    bindSidebar() {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                item.classList.add('active');
+                const panel = document.getElementById('panel-' + item.dataset.panel);
+                if (panel) panel.classList.add('active');
+                document.getElementById('panel-title').textContent = item.textContent.trim();
+
+                if (item.dataset.panel === 'dados') this.searchTable();
+                if (item.dataset.panel === 'mapa') this.loadHeatmap();
+
+                // Mobile: close sidebar
+                document.getElementById('sidebar').classList.remove('open');
+            });
+        });
+
+        document.getElementById('hamburger-btn').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
         });
     },
 
-    // ===== TABS =====
-    bindTabs() {
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
-
-                if (tab.dataset.tab === 'dados') this.searchTable();
-                if (tab.dataset.tab === 'mapa') this.loadHeatmap();
-            });
+    bindFilterToggle() {
+        const toggle = document.getElementById('filter-toggle');
+        const body = document.getElementById('filter-body');
+        toggle.addEventListener('click', () => {
+            const hidden = body.style.display === 'none';
+            body.style.display = hidden ? '' : 'none';
+            toggle.textContent = hidden ? 'Ocultar' : 'Mostrar';
         });
     },
 
@@ -44,11 +66,13 @@ const App = {
         document.getElementById('btn-clear').addEventListener('click', () => this.clearFilters());
         document.getElementById('btn-export-csv').addEventListener('click', () => this.exportCSV());
 
-        // Enter nas inputs
         document.querySelectorAll('.filter-group input').forEach(el => {
-            el.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.applyFilters();
-            });
+            el.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.applyFilters(); });
+        });
+
+        // Cultivar depends on especie
+        document.getElementById('filter-especie').addEventListener('change', () => {
+            this.loadCultivaresForEspecie();
         });
     },
 
@@ -57,7 +81,6 @@ const App = {
             const res = await fetch('api/filters.php');
             const data = await res.json();
             if (!data.success) return;
-
             this.filterOptions = data.filters;
 
             this.populateSelect('filter-safra', data.filters.safras, true);
@@ -65,14 +88,40 @@ const App = {
             this.populateSelect('filter-categoria', data.filters.categorias);
             this.populateSelect('filter-uf', data.filters.estados, true);
             this.populateSelect('filter-status', data.filters.statuses);
-
             this.updateStats(data.stats);
         } catch (err) {
             console.error('Erro ao carregar filtros:', err);
         }
     },
 
-    populateSelect(id, options, isMultiple = false) {
+    async loadCultivaresForEspecie() {
+        const especie = document.getElementById('filter-especie').value;
+        const select = document.getElementById('filter-cultivar');
+        select.innerHTML = '<option value="">Carregando...</option>';
+
+        if (!especie) {
+            select.innerHTML = '<option value="">Todas (selecione espécie)</option>';
+            return;
+        }
+
+        try {
+            const res = await fetch('api/stats.php?type=cultivares&especie=' + encodeURIComponent(especie));
+            const data = await res.json();
+            if (!data.success) return;
+
+            select.innerHTML = '<option value="">Todas as cultivares</option>';
+            data.data.forEach(cv => {
+                const opt = document.createElement('option');
+                opt.value = cv;
+                opt.textContent = cv;
+                select.appendChild(opt);
+            });
+        } catch (err) {
+            select.innerHTML = '<option value="">Erro ao carregar</option>';
+        }
+    },
+
+    populateSelect(id, options, isMultiple) {
         const select = document.getElementById(id);
         if (isMultiple) {
             select.innerHTML = '';
@@ -82,52 +131,43 @@ const App = {
             if (first) select.appendChild(first);
         }
         options.forEach(opt => {
-            const option = document.createElement('option');
-            option.value = opt;
-            option.textContent = opt;
-            select.appendChild(option);
+            const o = document.createElement('option');
+            o.value = opt;
+            o.textContent = opt;
+            select.appendChild(o);
         });
     },
 
     updateStats(stats) {
         const fmt = (n) => Number(n).toLocaleString('pt-BR');
-        const fmtDec = (n) => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmtD = (n) => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
         document.getElementById('stat-registros').textContent = fmt(stats.total_registros);
         document.getElementById('stat-especies').textContent = fmt(stats.total_especies);
         document.getElementById('stat-cultivares').textContent = fmt(stats.total_cultivares);
         document.getElementById('stat-estados').textContent = fmt(stats.total_estados);
         document.getElementById('stat-municipios').textContent = fmt(stats.total_municipios);
-        document.getElementById('stat-area').textContent = fmtDec(stats.total_area);
-        document.getElementById('stat-producao').textContent = fmtDec(stats.total_producao);
+        document.getElementById('stat-area').textContent = fmtD(stats.total_area);
+        document.getElementById('stat-producao').textContent = fmtD(stats.total_producao);
     },
 
     getFilterParams() {
         const params = new URLSearchParams();
-
         const safras = Array.from(document.getElementById('filter-safra').selectedOptions).map(o => o.value);
         safras.forEach(s => params.append('safra[]', s));
-
         const especie = document.getElementById('filter-especie').value;
         if (especie) params.set('especie', especie);
-
-        const categoria = document.getElementById('filter-categoria').value;
-        if (categoria) params.set('categoria', categoria);
-
-        const ufs = Array.from(document.getElementById('filter-uf').selectedOptions).map(o => o.value);
-        ufs.forEach(u => params.append('uf[]', u));
-
         const cultivar = document.getElementById('filter-cultivar').value;
         if (cultivar) params.set('cultivar', cultivar);
-
+        const categoria = document.getElementById('filter-categoria').value;
+        if (categoria) params.set('categoria', categoria);
+        const ufs = Array.from(document.getElementById('filter-uf').selectedOptions).map(o => o.value);
+        ufs.forEach(u => params.append('uf[]', u));
         const municipio = document.getElementById('filter-municipio').value;
         if (municipio) params.set('municipio', municipio);
-
         const status = document.getElementById('filter-status').value;
         if (status) params.set('status', status);
-
         const busca = document.getElementById('filter-busca').value;
         if (busca) params.set('busca', busca);
-
         return params;
     },
 
@@ -135,18 +175,15 @@ const App = {
         this.currentPage = 1;
         this.loadDashboard();
         this.loadHeatmap();
-
-        const activeTab = document.querySelector('.nav-tab.active');
-        if (activeTab && activeTab.dataset.tab === 'dados') {
-            this.searchTable();
-        }
+        const activePanel = document.querySelector('.nav-item.active');
+        if (activePanel && activePanel.dataset.panel === 'dados') this.searchTable();
     },
 
     clearFilters() {
         document.getElementById('filter-busca').value = '';
         document.getElementById('filter-especie').value = '';
+        document.getElementById('filter-cultivar').innerHTML = '<option value="">Todas (selecione espécie)</option>';
         document.getElementById('filter-categoria').value = '';
-        document.getElementById('filter-cultivar').value = '';
         document.getElementById('filter-municipio').value = '';
         document.getElementById('filter-status').value = '';
         document.getElementById('filter-safra').selectedIndex = -1;
@@ -170,15 +207,11 @@ const App = {
             const p = new URLSearchParams(params);
             p.set('type', 'evolucao');
             p.set('metric', 'producao_estimada');
-
             const res = await fetch('api/stats.php?' + p.toString());
             const data = await res.json();
             if (!data.success) return;
-
             this.renderLineChart('chart-evolucao', data.safras, data.series, 'Produção Estimada (t)');
-        } catch (err) {
-            console.error('Erro no gráfico de evolução:', err);
-        }
+        } catch (err) { console.error(err); }
     },
 
     async loadRankingChart(canvasId, by, metric, params) {
@@ -188,65 +221,56 @@ const App = {
             p.set('by', by);
             p.set('metric', metric);
             p.set('limit', '10');
-
             const res = await fetch('api/stats.php?' + p.toString());
             const data = await res.json();
             if (!data.success) return;
-
             const labels = data.data.map(d => d.label);
             const values = data.data.map(d => parseFloat(d.valor));
-            const metricLabel = metric === 'area' ? 'Área (ha)' : 'Produção (t)';
-
-            this.renderBarChart(canvasId, labels, values, metricLabel);
-        } catch (err) {
-            console.error('Erro no ranking:', err);
-        }
+            const label = metric === 'area' ? 'Área (ha)' : 'Produção (t)';
+            this.renderBarChart(canvasId, labels, values, label);
+        } catch (err) { console.error(err); }
     },
 
     // ===== CHARTS =====
     renderLineChart(canvasId, labels, seriesData, label) {
         if (this.charts[canvasId]) this.charts[canvasId].destroy();
-
-        const colors = ['#2e7d32', '#1565c0', '#c62828', '#f57f17', '#6a1b9a', '#00838f'];
+        const colors = ['#6c5ce7', '#00b894', '#e17055', '#0984e3', '#fdcb6e', '#00cec9'];
         const datasets = [];
         let i = 0;
-
         Object.entries(seriesData).forEach(([name, values]) => {
-            const color = colors[i % colors.length];
+            const c = colors[i % colors.length];
             datasets.push({
                 label: name,
                 data: labels.map(l => values[l] || 0),
-                borderColor: color,
-                backgroundColor: color + '20',
+                borderColor: c,
+                backgroundColor: c + '18',
                 fill: Object.keys(seriesData).length === 1,
-                tension: 0.3,
+                tension: 0.4,
                 pointRadius: 4,
-                pointHoverRadius: 6,
+                pointHoverRadius: 7,
+                borderWidth: 2.5,
             });
             i++;
         });
-
         this.charts[canvasId] = new Chart(document.getElementById(canvasId), {
             type: 'line',
             data: { labels, datasets },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: datasets.length > 1, position: 'top' },
+                    legend: { display: datasets.length > 1, labels: { usePointStyle: true, padding: 16 } },
                     tooltip: {
-                        callbacks: {
-                            label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                        }
+                        backgroundColor: '#1e1e2d',
+                        borderColor: '#2d2d44',
+                        borderWidth: 1,
+                        titleColor: '#a29bfe',
+                        bodyColor: '#e8e8f0',
+                        callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
                     }
                 },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: (v) => Number(v).toLocaleString('pt-BR')
-                        }
-                    }
+                    y: { beginAtZero: true, grid: { color: '#1e1e2d' }, ticks: { callback: (v) => Number(v).toLocaleString('pt-BR') } },
+                    x: { grid: { color: '#1e1e2d' } }
                 },
                 interaction: { intersect: false, mode: 'index' },
             }
@@ -255,7 +279,6 @@ const App = {
 
     renderBarChart(canvasId, labels, values, label) {
         if (this.charts[canvasId]) this.charts[canvasId].destroy();
-
         this.charts[canvasId] = new Chart(document.getElementById(canvasId), {
             type: 'bar',
             data: {
@@ -263,29 +286,30 @@ const App = {
                 datasets: [{
                     label,
                     data: values,
-                    backgroundColor: '#2e7d32cc',
-                    borderColor: '#1b5e20',
+                    backgroundColor: 'rgba(108, 92, 231, 0.7)',
+                    borderColor: '#6c5ce7',
                     borderWidth: 1,
-                    borderRadius: 4,
+                    borderRadius: 6,
+                    hoverBackgroundColor: '#a29bfe',
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 indexAxis: 'y',
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        callbacks: {
-                            label: (ctx) => `${label}: ${Number(ctx.parsed.x).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                        }
+                        backgroundColor: '#1e1e2d',
+                        borderColor: '#2d2d44',
+                        borderWidth: 1,
+                        titleColor: '#a29bfe',
+                        bodyColor: '#e8e8f0',
+                        callbacks: { label: (ctx) => `${label}: ${Number(ctx.parsed.x).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
                     }
                 },
                 scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: { callback: (v) => Number(v).toLocaleString('pt-BR') }
-                    }
+                    x: { beginAtZero: true, grid: { color: '#1e1e2d' }, ticks: { callback: v => Number(v).toLocaleString('pt-BR') } },
+                    y: { grid: { display: false } }
                 }
             }
         });
@@ -293,18 +317,14 @@ const App = {
 
     // ===== HEATMAP =====
     bindMap() {
-        document.querySelectorAll('.map-controls .btn-sm').forEach(btn => {
+        document.querySelectorAll('.metric-pill').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.map-controls .btn-sm').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.metric-pill').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                if (this.heatmapData) {
-                    BrazilMap.render('brazil-map-container', this.heatmapData, btn.dataset.metric);
-                }
+                if (this.heatmapData) BrazilMap.render('brazil-map-container', this.heatmapData, btn.dataset.metric);
             });
         });
-
         BrazilMap.onStateClick = (uf) => {
-            // Seleciona o estado no filtro
             const select = document.getElementById('filter-uf');
             Array.from(select.options).forEach(o => { o.selected = o.value === uf; });
             this.applyFilters();
@@ -318,42 +338,27 @@ const App = {
             const res = await fetch('api/stats.php?' + params.toString());
             const data = await res.json();
             if (!data.success) return;
-
             this.heatmapData = data.data;
-
-            const activeMetric = document.querySelector('.map-controls .btn-sm.active');
-            const metric = activeMetric ? activeMetric.dataset.metric : 'total_producao';
+            const active = document.querySelector('.metric-pill.active');
+            const metric = active ? active.dataset.metric : 'total_producao';
             BrazilMap.render('brazil-map-container', data.data, metric);
 
-            // Preenche tabela de detalhamento
             const tbody = document.getElementById('tbody-uf-detail');
             tbody.innerHTML = '';
-            const fmt = (n) => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
+            const fmt = n => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const fmtI = n => Number(n).toLocaleString('pt-BR');
             data.data.forEach(row => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${this.esc(row.uf)}</strong></td>
-                    <td class="num">${Number(row.registros).toLocaleString('pt-BR')}</td>
-                    <td class="num">${fmt(row.total_area)}</td>
-                    <td class="num">${fmt(row.total_producao)}</td>
-                    <td class="num">${fmt(row.total_producao_bruta)}</td>
-                    <td class="num">${Number(row.total_cultivares).toLocaleString('pt-BR')}</td>
-                    <td class="num">${Number(row.total_municipios).toLocaleString('pt-BR')}</td>
-                `;
+                tr.innerHTML = `<td>${this.esc(row.uf)}</td><td class="num">${fmtI(row.registros)}</td><td class="num">${fmt(row.total_area)}</td><td class="num">${fmt(row.total_producao)}</td><td class="num">${fmt(row.total_producao_bruta)}</td><td class="num">${fmtI(row.total_cultivares)}</td><td class="num">${fmtI(row.total_municipios)}</td>`;
                 tbody.appendChild(tr);
             });
-        } catch (err) {
-            console.error('Erro no heatmap:', err);
-        }
+        } catch (err) { console.error(err); }
     },
 
     // ===== COMPARISON =====
     bindComparison() {
-        const typeSelect = document.getElementById('compare-type');
-        typeSelect.addEventListener('change', () => this.updateCompareOptions());
+        document.getElementById('compare-type').addEventListener('change', () => this.updateCompareOptions());
         this.updateCompareOptions();
-
         document.getElementById('btn-compare').addEventListener('click', () => this.runComparison());
     },
 
@@ -361,66 +366,45 @@ const App = {
         const type = document.getElementById('compare-type').value;
         const select = document.getElementById('compare-items');
         select.innerHTML = '';
-
         if (!this.filterOptions) return;
 
         let options = [];
         if (type === 'safra') options = this.filterOptions.safras;
-        else if (type === 'cultivar' || type === 'cultivar_evolucao') {
-            this.loadCultivares();
-            return;
-        }
+        else if (type === 'cultivar' || type === 'cultivar_evolucao') { this.loadCompareCultivares(); return; }
         else if (type === 'uf_evolucao') options = this.filterOptions.estados;
 
         options.forEach(opt => {
             const o = document.createElement('option');
-            o.value = opt;
-            o.textContent = opt;
+            o.value = opt; o.textContent = opt;
             select.appendChild(o);
         });
     },
 
-    async loadCultivares() {
+    async loadCompareCultivares() {
         try {
             const params = this.getFilterParams();
             params.set('type', 'cultivares');
             const res = await fetch('api/stats.php?' + params.toString());
             const data = await res.json();
             if (!data.success) return;
-
             const select = document.getElementById('compare-items');
             select.innerHTML = '';
             data.data.forEach(cv => {
                 const o = document.createElement('option');
-                o.value = cv;
-                o.textContent = cv;
+                o.value = cv; o.textContent = cv;
                 select.appendChild(o);
             });
-        } catch (err) {
-            console.error('Erro ao carregar cultivares:', err);
-        }
+        } catch (err) { console.error(err); }
     },
 
     async runComparison() {
         const type = document.getElementById('compare-type').value;
         const selected = Array.from(document.getElementById('compare-items').selectedOptions).map(o => o.value);
-
-        if (selected.length < 2) {
-            alert('Selecione pelo menos 2 itens para comparar (Ctrl+click).');
-            return;
-        }
-
-        const container = document.getElementById('comparison-results');
-
-        if (type === 'safra' || type === 'cultivar') {
-            await this.runCardComparison(type, selected);
-        } else if (type === 'uf_evolucao') {
-            await this.runEvolutionComparison('uf', selected);
-        } else if (type === 'cultivar_evolucao') {
-            await this.runEvolutionComparison('cultivar', selected);
-        }
-
-        container.style.display = 'block';
+        if (selected.length < 2) { alert('Selecione pelo menos 2 itens (Ctrl+click).'); return; }
+        if (type === 'safra' || type === 'cultivar') await this.runCardComparison(type, selected);
+        else if (type === 'uf_evolucao') await this.runEvolutionComparison('uf', selected);
+        else if (type === 'cultivar_evolucao') await this.runEvolutionComparison('cultivar', selected);
+        document.getElementById('comparison-results').style.display = 'block';
     },
 
     async runCardComparison(type, items) {
@@ -429,8 +413,6 @@ const App = {
             params.set('type', 'comparativo');
             params.set('compare', type);
             items.forEach(item => params.append(type + '[]', item));
-
-            // Add current filters
             const filterParams = this.getFilterParams();
             for (const [key, value] of filterParams.entries()) {
                 if (!key.startsWith(type)) params.append(key, value);
@@ -440,60 +422,49 @@ const App = {
             const data = await res.json();
             if (!data.success) { alert(data.error); return; }
 
-            const cardsContainer = document.getElementById('compare-cards');
-            cardsContainer.innerHTML = '';
-
-            const fmt = (n) => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            const fmtInt = (n) => Number(n).toLocaleString('pt-BR');
-
-            const colors = ['#2e7d32', '#1565c0', '#c62828', '#f57f17', '#6a1b9a'];
+            const container = document.getElementById('compare-cards');
+            container.innerHTML = '';
+            const fmt = n => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const fmtI = n => Number(n).toLocaleString('pt-BR');
+            const cardColors = ['#6c5ce7', '#00b894', '#e17055', '#0984e3', '#fdcb6e'];
 
             data.data.forEach((item, idx) => {
                 const card = document.createElement('div');
                 card.className = 'compare-card';
-                card.style.borderLeftColor = colors[idx % colors.length];
+                card.style.borderTopColor = cardColors[idx % cardColors.length];
                 card.innerHTML = `
                     <h3>${this.esc(item.label)}</h3>
-                    <div class="metric-row"><span>Registros</span><span class="metric-value">${fmtInt(item.registros)}</span></div>
+                    <div class="metric-row"><span>Registros</span><span class="metric-value">${fmtI(item.registros)}</span></div>
                     <div class="metric-row"><span>Área Total (ha)</span><span class="metric-value">${fmt(item.total_area)}</span></div>
                     <div class="metric-row"><span>Prod. Estimada (t)</span><span class="metric-value">${fmt(item.total_producao)}</span></div>
                     <div class="metric-row"><span>Prod. Bruta (t)</span><span class="metric-value">${fmt(item.total_producao_bruta)}</span></div>
-                    <div class="metric-row"><span>Cultivares</span><span class="metric-value">${fmtInt(item.total_cultivares)}</span></div>
-                    <div class="metric-row"><span>Municípios</span><span class="metric-value">${fmtInt(item.total_municipios)}</span></div>
-                    <div class="metric-row"><span>Estados</span><span class="metric-value">${fmtInt(item.total_estados)}</span></div>
-                `;
-                cardsContainer.appendChild(card);
+                    <div class="metric-row"><span>Cultivares</span><span class="metric-value">${fmtI(item.total_cultivares)}</span></div>
+                    <div class="metric-row"><span>Municípios</span><span class="metric-value">${fmtI(item.total_municipios)}</span></div>
+                    <div class="metric-row"><span>Estados</span><span class="metric-value">${fmtI(item.total_estados)}</span></div>`;
+                container.appendChild(card);
             });
-
-            // Gráfico comparativo
-            const labels = data.data.map(d => d.label);
-            const datasets = [
-                { label: 'Área (ha)', data: data.data.map(d => parseFloat(d.total_area)), backgroundColor: '#2e7d32cc' },
-                { label: 'Prod. Estimada (t)', data: data.data.map(d => parseFloat(d.total_producao)), backgroundColor: '#1565c0cc' },
-                { label: 'Prod. Bruta (t)', data: data.data.map(d => parseFloat(d.total_producao_bruta)), backgroundColor: '#c62828cc' },
-            ];
 
             if (this.charts['chart-comparativo']) this.charts['chart-comparativo'].destroy();
             this.charts['chart-comparativo'] = new Chart(document.getElementById('chart-comparativo'), {
                 type: 'bar',
-                data: { labels, datasets },
+                data: {
+                    labels: data.data.map(d => d.label),
+                    datasets: [
+                        { label: 'Área (ha)', data: data.data.map(d => parseFloat(d.total_area)), backgroundColor: 'rgba(108,92,231,0.7)' },
+                        { label: 'Prod. Estimada (t)', data: data.data.map(d => parseFloat(d.total_producao)), backgroundColor: 'rgba(0,184,148,0.7)' },
+                        { label: 'Prod. Bruta (t)', data: data.data.map(d => parseFloat(d.total_producao_bruta)), backgroundColor: 'rgba(225,112,85,0.7)' },
+                    ]
+                },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        tooltip: {
-                            callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
-                        }
-                    },
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { tooltip: { backgroundColor: '#1e1e2d', borderColor: '#2d2d44', borderWidth: 1, titleColor: '#a29bfe', bodyColor: '#e8e8f0' } },
                     scales: {
-                        y: { beginAtZero: true, ticks: { callback: (v) => Number(v).toLocaleString('pt-BR') } }
+                        y: { beginAtZero: true, grid: { color: '#1e1e2d' }, ticks: { callback: v => Number(v).toLocaleString('pt-BR') } },
+                        x: { grid: { color: '#1e1e2d' } }
                     }
                 }
             });
-
-        } catch (err) {
-            console.error('Erro na comparação:', err);
-        }
+        } catch (err) { console.error(err); }
     },
 
     async runEvolutionComparison(groupBy, items) {
@@ -503,18 +474,12 @@ const App = {
             params.set('metric', 'producao_estimada');
             params.set('group', groupBy);
             items.forEach(item => params.append(groupBy + '[]', item));
-
             const res = await fetch('api/stats.php?' + params.toString());
             const data = await res.json();
             if (!data.success) return;
-
-            document.getElementById('compare-cards').innerHTML =
-                '<p style="color:#666;padding:10px;">Veja o gráfico abaixo para a evolução comparativa.</p>';
-
+            document.getElementById('compare-cards').innerHTML = '';
             this.renderLineChart('chart-comparativo', data.safras, data.series, 'Produção Estimada (t)');
-        } catch (err) {
-            console.error('Erro na evolução comparativa:', err);
-        }
+        } catch (err) { console.error(err); }
     },
 
     // ===== TABLE =====
@@ -522,12 +487,8 @@ const App = {
         document.querySelectorAll('th[data-sort]').forEach(th => {
             th.addEventListener('click', () => {
                 const col = th.dataset.sort;
-                if (this.currentSort === col) {
-                    this.currentDir = this.currentDir === 'asc' ? 'desc' : 'asc';
-                } else {
-                    this.currentSort = col;
-                    this.currentDir = 'asc';
-                }
+                if (this.currentSort === col) this.currentDir = this.currentDir === 'asc' ? 'desc' : 'asc';
+                else { this.currentSort = col; this.currentDir = 'asc'; }
                 this.updateSortIndicators();
                 this.searchTable();
             });
@@ -552,7 +513,6 @@ const App = {
         const tbody = document.getElementById('results-body');
         const loading = document.getElementById('loading');
         const tableCard = document.getElementById('table-card');
-
         tbody.innerHTML = '';
         loading.style.display = 'block';
         tableCard.style.display = 'none';
@@ -562,25 +522,21 @@ const App = {
             params.set('page', this.currentPage);
             params.set('sort', this.currentSort);
             params.set('dir', this.currentDir);
-
             const res = await fetch('api/search.php?' + params.toString());
             const data = await res.json();
-
             loading.style.display = 'none';
 
             if (!data.success) {
-                tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:20px;color:#c62828;">${data.error}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:20px;color:#e17055;">${data.error}</td></tr>`;
                 tableCard.style.display = 'block';
                 return;
             }
 
-            document.getElementById('results-count').textContent =
-                `${data.pagination.totalRows.toLocaleString('pt-BR')} registro(s)`;
-            document.getElementById('results-page').textContent =
-                `Página ${data.pagination.page} de ${data.pagination.totalPages}`;
+            document.getElementById('results-count').textContent = `${data.pagination.totalRows.toLocaleString('pt-BR')} registro(s)`;
+            document.getElementById('results-page').textContent = `Página ${data.pagination.page} de ${data.pagination.totalPages}`;
 
             if (data.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:30px;color:#666;">Nenhum registro encontrado.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:30px;color:#5a5b75;">Nenhum registro encontrado.</td></tr>';
             } else {
                 data.data.forEach(row => {
                     const tr = document.createElement('tr');
@@ -596,56 +552,37 @@ const App = {
                         <td class="num">${row.producao_bruta_fmt || '-'}</td>
                         <td class="num">${row.producao_estimada_fmt || '-'}</td>
                         <td>${row.data_plantio_fmt || '-'}</td>
-                        <td>${row.data_colheita_fmt || '-'}</td>
-                    `;
+                        <td>${row.data_colheita_fmt || '-'}</td>`;
                     tbody.appendChild(tr);
                 });
             }
-
             tableCard.style.display = 'block';
             this.renderPagination(data.pagination);
-
         } catch (err) {
             loading.style.display = 'none';
             tableCard.style.display = 'block';
-            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#c62828;">Erro de conexão.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#e17055;">Erro de conexão.</td></tr>';
         }
     },
 
     renderPagination(pag) {
-        const container = document.getElementById('pagination');
-        container.innerHTML = '';
+        const c = document.getElementById('pagination');
+        c.innerHTML = '';
         if (pag.totalPages <= 1) return;
-
-        const addBtn = (text, page, disabled = false, active = false) => {
+        const addBtn = (text, page, disabled, active) => {
             const btn = document.createElement('button');
             btn.textContent = text;
             btn.disabled = disabled;
             if (active) btn.classList.add('active');
-            if (!disabled) {
-                btn.addEventListener('click', () => {
-                    this.currentPage = page;
-                    this.searchTable();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                });
-            }
-            container.appendChild(btn);
+            if (!disabled) btn.addEventListener('click', () => { this.currentPage = page; this.searchTable(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+            c.appendChild(btn);
         };
-
         addBtn('Anterior', pag.page - 1, pag.page <= 1);
-
         const range = this.getPageRange(pag.page, pag.totalPages);
         range.forEach(p => {
-            if (p === '...') {
-                const span = document.createElement('span');
-                span.textContent = '...';
-                span.style.padding = '8px 4px';
-                container.appendChild(span);
-            } else {
-                addBtn(p, p, false, p === pag.page);
-            }
+            if (p === '...') { const s = document.createElement('span'); s.textContent = '...'; s.style.padding = '8px 4px'; s.style.color = '#5a5b75'; c.appendChild(s); }
+            else addBtn(p, p, false, p === pag.page);
         });
-
         addBtn('Próximo', pag.page + 1, pag.page >= pag.totalPages);
     },
 
@@ -661,8 +598,7 @@ const App = {
 
     // ===== EXPORT =====
     exportCSV() {
-        const params = this.getFilterParams();
-        window.location.href = 'api/export.php?' + params.toString();
+        window.location.href = 'api/export.php?' + this.getFilterParams().toString();
     },
 
     // ===== PDF =====
@@ -672,53 +608,38 @@ const App = {
 
     async generatePDF() {
         const btn = document.getElementById('btn-pdf');
-        btn.disabled = true;
-        btn.textContent = 'Gerando...';
+        btn.disabled = true; btn.textContent = 'Gerando...';
 
         try {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
-            const pageW = doc.internal.pageSize.getWidth();
-            const margin = 15;
+            const W = doc.internal.pageSize.getWidth();
+            const M = 15;
             let y = 20;
 
-            // === CABEÇALHO ===
-            doc.setFillColor(30, 94, 32);
-            doc.rect(0, 0, pageW, 35, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(20);
+            // Header
+            doc.setFillColor(30, 30, 45);
+            doc.rect(0, 0, W, 32, 'F');
+            doc.setFillColor(108, 92, 231);
+            doc.rect(0, 32, W, 3, 'F');
+            doc.setTextColor(162, 155, 254);
+            doc.setFontSize(18);
             doc.setFont(undefined, 'bold');
-            doc.text('DataSemente - Relatório Gerencial', margin, 18);
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            doc.text('Dados de campo e produção de sementes do Brasil', margin, 27);
-            doc.text('Gerado em: ' + new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR'), pageW - margin, 27, { align: 'right' });
+            doc.text('DataSemente', M, 16);
+            doc.setFontSize(9);
+            doc.setTextColor(139, 140, 167);
+            doc.text('Relatório Gerencial - Dados de Campo e Produção', M, 24);
+            doc.text(new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR'), W - M, 24, { align: 'right' });
 
-            y = 45;
+            y = 44;
             doc.setTextColor(0, 0, 0);
 
-            // === FILTROS APLICADOS ===
-            const filtros = this.getActiveFiltersText();
-            if (filtros) {
-                doc.setFontSize(9);
-                doc.setTextColor(100, 100, 100);
-                doc.text('Filtros: ' + filtros, margin, y);
-                y += 8;
-            }
-
-            // === RESUMO GERAL ===
-            doc.setFontSize(14);
-            doc.setTextColor(30, 94, 32);
+            // Stats
+            doc.setFontSize(12);
+            doc.setTextColor(108, 92, 231);
             doc.setFont(undefined, 'bold');
-            doc.text('Resumo Geral', margin, y);
-            y += 2;
-            doc.setDrawColor(30, 94, 32);
-            doc.line(margin, y, pageW - margin, y);
+            doc.text('Resumo Geral', M, y);
             y += 8;
-
-            doc.setFontSize(10);
-            doc.setTextColor(0, 0, 0);
-            doc.setFont(undefined, 'normal');
 
             const stats = [
                 ['Registros', document.getElementById('stat-registros').textContent],
@@ -727,183 +648,68 @@ const App = {
                 ['Estados', document.getElementById('stat-estados').textContent],
                 ['Municípios', document.getElementById('stat-municipios').textContent],
                 ['Área Total (ha)', document.getElementById('stat-area').textContent],
-                ['Produção Total (t)', document.getElementById('stat-producao').textContent],
+                ['Produção (t)', document.getElementById('stat-producao').textContent],
             ];
 
-            const colW = (pageW - 2 * margin) / 4;
+            const colW = (W - 2 * M) / 4;
             stats.forEach((s, i) => {
-                const col = i % 4;
-                const row = Math.floor(i / 4);
-                const x = margin + col * colW;
-                const sy = y + row * 16;
-                doc.setFontSize(8);
-                doc.setTextColor(100, 100, 100);
+                const col = i % 4, row = Math.floor(i / 4);
+                const x = M + col * colW, sy = y + row * 14;
+                doc.setFontSize(7); doc.setTextColor(120); doc.setFont(undefined, 'normal');
                 doc.text(s[0], x, sy);
-                doc.setFontSize(13);
-                doc.setTextColor(30, 94, 32);
-                doc.setFont(undefined, 'bold');
-                doc.text(s[1], x, sy + 6);
-                doc.setFont(undefined, 'normal');
+                doc.setFontSize(12); doc.setTextColor(30, 30, 45); doc.setFont(undefined, 'bold');
+                doc.text(s[1], x, sy + 5);
             });
+            y += Math.ceil(stats.length / 4) * 14 + 8;
 
-            y += Math.ceil(stats.length / 4) * 16 + 10;
-
-            // === RANKING POR ESTADO ===
+            // Rankings
             const params = this.getFilterParams();
-            params.set('type', 'ranking');
-            params.set('by', 'uf');
-            params.set('metric', 'producao_estimada');
-            params.set('limit', '15');
+            for (const [title, by, metric, color] of [
+                ['Ranking por Estado', 'uf', 'producao_estimada', [108, 92, 231]],
+                ['Top 15 Cultivares', 'cultivar', 'producao_estimada', [0, 184, 148]],
+                ['Top 15 Municípios', 'municipio', 'area', [225, 112, 85]],
+            ]) {
+                if (y > 220) { doc.addPage(); y = 20; }
+                const p = new URLSearchParams(params);
+                p.set('type', 'ranking'); p.set('by', by); p.set('metric', metric); p.set('limit', '15');
+                const res = await fetch('api/stats.php?' + p.toString());
+                const data = await res.json();
+                if (!data.success || !data.data.length) continue;
 
-            const rankRes = await fetch('api/stats.php?' + params.toString());
-            const rankData = await rankRes.json();
-
-            if (rankData.success && rankData.data.length > 0) {
-                doc.setFontSize(14);
-                doc.setTextColor(30, 94, 32);
-                doc.setFont(undefined, 'bold');
-                doc.text('Ranking por Estado - Produção Estimada', margin, y);
-                y += 2;
-                doc.line(margin, y, pageW - margin, y);
-                y += 4;
+                doc.setFontSize(12); doc.setTextColor(...color); doc.setFont(undefined, 'bold');
+                doc.text(title, M, y); y += 4;
 
                 doc.autoTable({
-                    startY: y,
-                    margin: { left: margin, right: margin },
-                    head: [['#', 'UF', 'Produção Estimada (t)', 'Área (ha)', 'Registros']],
-                    body: rankData.data.map((d, i) => [
-                        i + 1,
-                        d.label,
-                        Number(d.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-                        Number(d.total_area).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-                        Number(d.registros).toLocaleString('pt-BR'),
-                    ]),
-                    headStyles: { fillColor: [30, 94, 32], fontSize: 8 },
-                    bodyStyles: { fontSize: 8 },
-                    alternateRowStyles: { fillColor: [240, 247, 240] },
+                    startY: y, margin: { left: M, right: M },
+                    head: [['#', by === 'uf' ? 'UF' : by.charAt(0).toUpperCase() + by.slice(1), metric === 'area' ? 'Área (ha)' : 'Produção (t)', 'Registros']],
+                    body: data.data.map((d, i) => [i + 1, d.label, Number(d.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 }), Number(d.registros).toLocaleString('pt-BR')]),
+                    headStyles: { fillColor: color, fontSize: 7.5, cellPadding: 3 },
+                    bodyStyles: { fontSize: 7.5, cellPadding: 2.5 },
+                    alternateRowStyles: { fillColor: [245, 245, 250] },
                 });
-
-                y = doc.lastAutoTable.finalY + 15;
+                y = doc.lastAutoTable.finalY + 12;
             }
 
-            // === RANKING POR CULTIVAR ===
-            if (y > 240) { doc.addPage(); y = 20; }
-
-            params.set('by', 'cultivar');
-            const cvRes = await fetch('api/stats.php?' + params.toString());
-            const cvData = await cvRes.json();
-
-            if (cvData.success && cvData.data.length > 0) {
-                doc.setFontSize(14);
-                doc.setTextColor(30, 94, 32);
-                doc.setFont(undefined, 'bold');
-                doc.text('Top 15 Cultivares - Produção Estimada', margin, y);
-                y += 2;
-                doc.line(margin, y, pageW - margin, y);
-                y += 4;
-
-                doc.autoTable({
-                    startY: y,
-                    margin: { left: margin, right: margin },
-                    head: [['#', 'Cultivar', 'Produção Estimada (t)', 'Área (ha)', 'Registros']],
-                    body: cvData.data.map((d, i) => [
-                        i + 1,
-                        d.label,
-                        Number(d.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-                        Number(d.total_area).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-                        Number(d.registros).toLocaleString('pt-BR'),
-                    ]),
-                    headStyles: { fillColor: [21, 101, 192], fontSize: 8 },
-                    bodyStyles: { fontSize: 8 },
-                    alternateRowStyles: { fillColor: [232, 240, 254] },
-                });
-
-                y = doc.lastAutoTable.finalY + 15;
-            }
-
-            // === RANKING POR MUNICÍPIO ===
-            if (y > 200) { doc.addPage(); y = 20; }
-
-            params.set('by', 'municipio');
-            params.set('metric', 'area');
-            const munRes = await fetch('api/stats.php?' + params.toString());
-            const munData = await munRes.json();
-
-            if (munData.success && munData.data.length > 0) {
-                doc.setFontSize(14);
-                doc.setTextColor(30, 94, 32);
-                doc.setFont(undefined, 'bold');
-                doc.text('Top 15 Municípios - Área Plantada', margin, y);
-                y += 2;
-                doc.line(margin, y, pageW - margin, y);
-                y += 4;
-
-                doc.autoTable({
-                    startY: y,
-                    margin: { left: margin, right: margin },
-                    head: [['#', 'Município', 'Área (ha)', 'Registros']],
-                    body: munData.data.map((d, i) => [
-                        i + 1,
-                        d.label,
-                        Number(d.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-                        Number(d.registros).toLocaleString('pt-BR'),
-                    ]),
-                    headStyles: { fillColor: [198, 40, 40], fontSize: 8 },
-                    bodyStyles: { fontSize: 8 },
-                    alternateRowStyles: { fillColor: [254, 235, 235] },
-                });
-            }
-
-            // === RODAPÉ EM TODAS AS PÁGINAS ===
+            // Footer
             const totalPages = doc.internal.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(150, 150, 150);
-                doc.text(
-                    `DataSemente - Página ${i} de ${totalPages}`,
-                    pageW / 2, doc.internal.pageSize.getHeight() - 10,
-                    { align: 'center' }
-                );
+                doc.setFontSize(7); doc.setTextColor(150);
+                doc.text(`DataSemente - Página ${i} de ${totalPages}`, W / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
             }
-
-            doc.save('datasemente_relatorio_' + new Date().toISOString().slice(0, 10) + '.pdf');
-
+            doc.save('datasemente_' + new Date().toISOString().slice(0, 10) + '.pdf');
         } catch (err) {
-            console.error('Erro ao gerar PDF:', err);
-            alert('Erro ao gerar o PDF. Tente novamente.');
+            console.error(err);
+            alert('Erro ao gerar PDF.');
         }
-
-        btn.disabled = false;
-        btn.textContent = 'PDF';
+        btn.disabled = false; btn.textContent = 'PDF';
     },
 
-    getActiveFiltersText() {
-        const parts = [];
-        const safras = Array.from(document.getElementById('filter-safra').selectedOptions).map(o => o.value);
-        if (safras.length) parts.push('Safra: ' + safras.join(', '));
-
-        const especie = document.getElementById('filter-especie').value;
-        if (especie) parts.push('Espécie: ' + especie);
-
-        const ufs = Array.from(document.getElementById('filter-uf').selectedOptions).map(o => o.value);
-        if (ufs.length) parts.push('UF: ' + ufs.join(', '));
-
-        const cultivar = document.getElementById('filter-cultivar').value;
-        if (cultivar) parts.push('Cultivar: ' + cultivar);
-
-        const municipio = document.getElementById('filter-municipio').value;
-        if (municipio) parts.push('Município: ' + municipio);
-
-        return parts.join(' | ');
-    },
-
-    // ===== UTILS =====
     esc(val) {
         if (val === null || val === undefined) return '-';
-        const div = document.createElement('div');
-        div.textContent = val;
-        return div.innerHTML;
+        const d = document.createElement('div');
+        d.textContent = val;
+        return d.innerHTML;
     }
 };
 

@@ -5,336 +5,320 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DataSemente - Preview</title>
     <link rel="stylesheet" href="assets/css/style.css">
-    <style>
-        /* Override para funcionar sem backend */
-        .brazil-svg { width: 100%; max-height: 450px; }
-    </style>
 </head>
 <body>
 
-<!-- Header -->
-<header class="header">
-    <div class="container">
-        <div class="header-content">
+<button class="hamburger" id="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+
+<div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <h1>DataSemente</h1>
+            <span>Painel Gerencial</span>
+        </div>
+        <nav class="sidebar-nav">
+            <button class="nav-item active" onclick="showPanel('dashboard', this)">
+                <span class="nav-icon">&#9635;</span> Dashboard
+            </button>
+            <button class="nav-item" onclick="showPanel('mapa', this)">
+                <span class="nav-icon">&#9737;</span> Mapa de Calor
+            </button>
+            <button class="nav-item" onclick="showPanel('comparativo', this)">
+                <span class="nav-icon">&#8700;</span> Comparativo
+            </button>
+            <button class="nav-item" onclick="showPanel('dados', this)">
+                <span class="nav-icon">&#9783;</span> Dados
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="btn btn-accent btn-sm" style="flex:1;">PDF</button>
+            <button class="btn btn-ghost btn-sm" style="flex:1;">CSV</button>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+
+        <div class="topbar">
+            <div class="topbar-title">
+                <h2 id="panel-title">Dashboard</h2>
+                <p>Dados de campo e produção de sementes do Brasil</p>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-value">847.392</div><div class="kpi-label">Registros</div></div>
+            <div class="kpi-card"><div class="kpi-value">42</div><div class="kpi-label">Espécies</div></div>
+            <div class="kpi-card"><div class="kpi-value">3.218</div><div class="kpi-label">Cultivares</div></div>
+            <div class="kpi-card"><div class="kpi-value">27</div><div class="kpi-label">Estados</div></div>
+            <div class="kpi-card"><div class="kpi-value">4.156</div><div class="kpi-label">Municípios</div></div>
+            <div class="kpi-card"><div class="kpi-value">1.254.890</div><div class="kpi-label">Área Total (ha)</div></div>
+            <div class="kpi-card"><div class="kpi-value">8.741.230</div><div class="kpi-label">Produção (t)</div></div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filter-bar">
+            <div class="filter-bar-header">
+                <h3>Filtros</h3>
+                <button class="filter-toggle" onclick="this.parentElement.nextElementSibling.style.display = this.parentElement.nextElementSibling.style.display === 'none' ? '' : 'none'; this.textContent = this.textContent === 'Ocultar' ? 'Mostrar' : 'Ocultar';">Ocultar</button>
+            </div>
             <div>
-                <h1>DataSemente</h1>
-                <p>Painel gerencial de dados de campo e produção de sementes</p>
-            </div>
-            <div class="header-actions">
-                <button class="btn btn-accent btn-sm">PDF</button>
-                <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;">CSV</button>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label>Busca geral</label>
+                        <input type="text" placeholder="Buscar...">
+                    </div>
+                    <div class="filter-group">
+                        <label>Safra(s)</label>
+                        <select multiple>
+                            <option>2024/2024</option><option selected>2023/2023</option>
+                            <option>2022/2022</option><option>2021/2021</option><option>2020/2020</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Espécie</label>
+                        <select id="demo-especie" onchange="updateCultivar()">
+                            <option value="">Todas</option>
+                            <option value="soja">Glycine max (L.) Merr.</option>
+                            <option value="milho" selected>Zea mays L.</option>
+                            <option value="arroz">Oryza sativa L.</option>
+                            <option value="trigo">Triticum aestivum L.</option>
+                            <option value="algodao">Gossypium hirsutum L.</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Cultivar</label>
+                        <select id="demo-cultivar">
+                            <option value="">Todas as cultivares</option>
+                            <option>BRS 2022</option>
+                            <option>BRS 3046</option>
+                            <option>BRS Gorutuba</option>
+                            <option>AG 1051</option>
+                            <option>BR 106</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Categoria</label>
+                        <select><option value="">Todas</option><option>S1</option><option selected>S2</option><option>C1</option><option>C2</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Estado(s)</label>
+                        <select multiple>
+                            <option>BA</option><option selected>GO</option><option>MG</option>
+                            <option>MS</option><option selected>MT</option><option selected>PR</option>
+                            <option>RS</option><option>SP</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Município</label>
+                        <input type="text" placeholder="Nome...">
+                    </div>
+                    <div class="filter-group">
+                        <label>Status</label>
+                        <select><option value="">Todos</option><option selected>Homologado</option><option>Em andamento</option></select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-accent">Aplicar</button>
+                    <button class="btn btn-ghost">Limpar</button>
+                </div>
             </div>
         </div>
+
+        <!-- DASHBOARD -->
+        <div class="panel active" id="panel-dashboard">
+            <div class="dash-grid">
+                <div class="widget span-2">
+                    <div class="widget-header">
+                        <div><div class="widget-title">Evolução por Safra</div><div class="widget-subtitle">Produção estimada ao longo das safras</div></div>
+                    </div>
+                    <div class="chart-container-lg"><canvas id="chart-evolucao"></canvas></div>
+                </div>
+                <div class="widget">
+                    <div class="widget-header"><div><div class="widget-title">Top 10 Estados</div><div class="widget-subtitle">Produção estimada (t)</div></div></div>
+                    <div class="chart-container"><canvas id="chart-ranking-uf"></canvas></div>
+                </div>
+                <div class="widget">
+                    <div class="widget-header"><div><div class="widget-title">Top 10 Cultivares</div><div class="widget-subtitle">Produção estimada (t)</div></div></div>
+                    <div class="chart-container"><canvas id="chart-ranking-cultivar"></canvas></div>
+                </div>
+                <div class="widget span-2">
+                    <div class="widget-header"><div><div class="widget-title">Top 10 Municípios</div><div class="widget-subtitle">Área plantada (ha)</div></div></div>
+                    <div class="chart-container"><canvas id="chart-ranking-municipio"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAPA -->
+        <div class="panel" id="panel-mapa">
+            <div class="dash-grid">
+                <div class="widget span-2">
+                    <div class="widget-header">
+                        <div><div class="widget-title">Mapa de Calor do Brasil</div><div class="widget-subtitle">Clique em um estado para filtrar</div></div>
+                        <div class="metric-pills">
+                            <button class="metric-pill active" onclick="switchMetric(this,'total_producao')">Produção</button>
+                            <button class="metric-pill" onclick="switchMetric(this,'total_area')">Área</button>
+                            <button class="metric-pill" onclick="switchMetric(this,'registros')">Registros</button>
+                            <button class="metric-pill" onclick="switchMetric(this,'total_cultivares')">Cultivares</button>
+                        </div>
+                    </div>
+                    <div id="brazil-map-container"></div>
+                </div>
+                <div class="widget span-2">
+                    <div class="widget-header"><div class="widget-title">Detalhamento por Estado</div></div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>UF</th><th>Registros</th><th>Área (ha)</th><th>Prod. Estimada (t)</th><th>Prod. Bruta (t)</th><th>Cultivares</th><th>Municípios</th></tr></thead>
+                            <tbody id="tbody-uf-detail"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMPARATIVO -->
+        <div class="panel" id="panel-comparativo">
+            <div class="widget">
+                <div class="widget-header"><div class="widget-title">Selecione o que comparar</div></div>
+                <div class="filters-grid" style="grid-template-columns: 1fr 1fr auto;">
+                    <div class="filter-group"><label>Tipo</label><select><option selected>Safra x Safra</option><option>Cultivar x Cultivar</option></select></div>
+                    <div class="filter-group"><label>Itens (Ctrl+click)</label><select multiple style="height:110px;"><option selected>2023/2023</option><option selected>2022/2022</option><option>2021/2021</option><option>2020/2020</option></select></div>
+                    <div class="filter-group" style="display:flex;align-items:flex-end;"><button class="btn btn-accent">Comparar</button></div>
+                </div>
+            </div>
+            <div class="comparison-grid">
+                <div class="compare-card" style="border-top-color:#6c5ce7;">
+                    <h3>2023/2023</h3>
+                    <div class="metric-row"><span>Registros</span><span class="metric-value">124.530</span></div>
+                    <div class="metric-row"><span>Área Total (ha)</span><span class="metric-value">456.230,50</span></div>
+                    <div class="metric-row"><span>Prod. Estimada (t)</span><span class="metric-value">2.841.500,00</span></div>
+                    <div class="metric-row"><span>Prod. Bruta (t)</span><span class="metric-value">2.650.320,80</span></div>
+                    <div class="metric-row"><span>Cultivares</span><span class="metric-value">1.842</span></div>
+                    <div class="metric-row"><span>Municípios</span><span class="metric-value">2.105</span></div>
+                    <div class="metric-row"><span>Estados</span><span class="metric-value">24</span></div>
+                </div>
+                <div class="compare-card" style="border-top-color:#00b894;">
+                    <h3>2022/2022</h3>
+                    <div class="metric-row"><span>Registros</span><span class="metric-value">118.270</span></div>
+                    <div class="metric-row"><span>Área Total (ha)</span><span class="metric-value">412.890,30</span></div>
+                    <div class="metric-row"><span>Prod. Estimada (t)</span><span class="metric-value">2.520.100,00</span></div>
+                    <div class="metric-row"><span>Prod. Bruta (t)</span><span class="metric-value">2.310.450,60</span></div>
+                    <div class="metric-row"><span>Cultivares</span><span class="metric-value">1.720</span></div>
+                    <div class="metric-row"><span>Municípios</span><span class="metric-value">1.980</span></div>
+                    <div class="metric-row"><span>Estados</span><span class="metric-value">23</span></div>
+                </div>
+            </div>
+            <div class="widget"><div class="widget-header"><div class="widget-title">Gráfico Comparativo</div></div><div class="chart-container-lg"><canvas id="chart-comparativo"></canvas></div></div>
+        </div>
+
+        <!-- DADOS -->
+        <div class="panel" id="panel-dados">
+            <div class="results-info">
+                <span class="results-count">847.392 registro(s)</span>
+                <span>Página 1 de 16.948</span>
+            </div>
+            <div class="widget">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Safra <span class="sort-icon">&#8595;</span></th>
+                                <th>Espécie <span class="sort-icon">&#8597;</span></th>
+                                <th>Cat. <span class="sort-icon">&#8597;</span></th>
+                                <th>Cultivar <span class="sort-icon">&#8597;</span></th>
+                                <th>Município <span class="sort-icon">&#8597;</span></th>
+                                <th>UF <span class="sort-icon">&#8597;</span></th>
+                                <th>Status <span class="sort-icon">&#8597;</span></th>
+                                <th>Área (ha) <span class="sort-icon">&#8597;</span></th>
+                                <th>Prod. Bruta <span class="sort-icon">&#8597;</span></th>
+                                <th>Prod. Est. <span class="sort-icon">&#8597;</span></th>
+                                <th>Plantio <span class="sort-icon">&#8597;</span></th>
+                                <th>Colheita <span class="sort-icon">&#8597;</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>2023/2023</td><td>Zea mays L.</td><td>S2</td><td>BRS 2022</td><td>Cedro</td><td>PE</td><td>Homologado</td><td class="num">9,50</td><td class="num">-</td><td class="num">38,00</td><td>01/01/2013</td><td>-</td></tr>
+                            <tr><td>2023/2023</td><td>Zea mays L.</td><td>S1</td><td>BRS Gorutuba</td><td>Petrolina</td><td>PE</td><td>Homologado</td><td class="num">15,00</td><td class="num">52,50</td><td class="num">60,00</td><td>15/02/2013</td><td>20/07/2013</td></tr>
+                            <tr><td>2023/2023</td><td>Glycine max</td><td>S2</td><td>BRS 388</td><td>Sorriso</td><td>MT</td><td>Homologado</td><td class="num">250,00</td><td class="num">825,00</td><td class="num">900,00</td><td>10/10/2022</td><td>15/02/2023</td></tr>
+                            <tr><td>2023/2023</td><td>Glycine max</td><td>C1</td><td>TMG 2381</td><td>Rio Verde</td><td>GO</td><td>Homologado</td><td class="num">180,00</td><td class="num">612,00</td><td class="num">648,00</td><td>05/10/2022</td><td>10/02/2023</td></tr>
+                            <tr><td>2023/2023</td><td>Glycine max</td><td>S1</td><td>NA 5909 RG</td><td>Londrina</td><td>PR</td><td>Homologado</td><td class="num">120,00</td><td class="num">408,00</td><td class="num">432,00</td><td>15/10/2022</td><td>20/02/2023</td></tr>
+                            <tr><td>2023/2023</td><td>Oryza sativa L.</td><td>S2</td><td>BRS Catiana</td><td>Pelotas</td><td>RS</td><td>Homologado</td><td class="num">85,00</td><td class="num">595,00</td><td class="num">612,00</td><td>01/11/2022</td><td>01/03/2023</td></tr>
+                            <tr><td>2022/2022</td><td>Zea mays L.</td><td>S2</td><td>BRS 3046</td><td>Sete Lagoas</td><td>MG</td><td>Homologado</td><td class="num">45,00</td><td class="num">270,00</td><td class="num">292,50</td><td>20/11/2021</td><td>15/04/2022</td></tr>
+                            <tr><td>2022/2022</td><td>Glycine max</td><td>S1</td><td>M 8210 IPRO</td><td>Dourados</td><td>MS</td><td>Homologado</td><td class="num">200,00</td><td class="num">660,00</td><td class="num">720,00</td><td>10/10/2021</td><td>10/02/2022</td></tr>
+                            <tr><td>2022/2022</td><td>Triticum aestivum</td><td>C2</td><td>BRS Marcante</td><td>Passo Fundo</td><td>RS</td><td>Homologado</td><td class="num">60,00</td><td class="num">180,00</td><td class="num">198,00</td><td>01/06/2022</td><td>15/10/2022</td></tr>
+                            <tr><td>2022/2022</td><td>Gossypium hirsutum</td><td>S1</td><td>BRS 433 FL B2RF</td><td>L.E.Magalhães</td><td>BA</td><td>Homologado</td><td class="num">350,00</td><td class="num">1.575,00</td><td class="num">1.680,00</td><td>05/12/2021</td><td>20/06/2022</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pagination">
+                <button disabled>Anterior</button>
+                <button class="active">1</button><button>2</button><button>3</button>
+                <span style="padding:8px 4px;color:#5a5b75;">...</span>
+                <button>16.948</button><button>Próximo</button>
+            </div>
+        </div>
+
     </div>
-</header>
-
-<main class="container">
-
-    <!-- Stats -->
-    <div class="stats-bar">
-        <div class="stat-card">
-            <div class="stat-value">847.392</div>
-            <div class="stat-label">Registros</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">42</div>
-            <div class="stat-label">Espécies</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">3.218</div>
-            <div class="stat-label">Cultivares</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">27</div>
-            <div class="stat-label">Estados</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">4.156</div>
-            <div class="stat-label">Municípios</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">1.254.890,50</div>
-            <div class="stat-label">Área Total (ha)</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">8.741.230,00</div>
-            <div class="stat-label">Produção (t)</div>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <section class="card">
-        <div class="card-title">Filtros</div>
-        <div class="filters-grid">
-            <div class="filter-group">
-                <label>Busca geral</label>
-                <input type="text" placeholder="Espécie, cultivar, município...">
-            </div>
-            <div class="filter-group">
-                <label>Safra(s)</label>
-                <select multiple style="height:90px;">
-                    <option>2024/2024</option>
-                    <option selected>2023/2023</option>
-                    <option>2022/2022</option>
-                    <option>2021/2021</option>
-                    <option>2020/2020</option>
-                    <option>2019/2019</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Espécie</label>
-                <select>
-                    <option value="">Todas</option>
-                    <option>Glycine max (L.) Merr.</option>
-                    <option selected>Zea mays L.</option>
-                    <option>Oryza sativa L.</option>
-                    <option>Triticum aestivum L.</option>
-                    <option>Gossypium hirsutum L.</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Categoria</label>
-                <select>
-                    <option value="">Todas</option>
-                    <option>S1</option>
-                    <option selected>S2</option>
-                    <option>C1</option>
-                    <option>C2</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Estado(s)</label>
-                <select multiple style="height:90px;">
-                    <option>AC</option><option>AL</option><option>AM</option><option>BA</option>
-                    <option selected>GO</option><option>MG</option><option>MS</option>
-                    <option selected>MT</option><option>PA</option><option selected>PR</option>
-                    <option>RS</option><option>SP</option><option>TO</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Cultivar</label>
-                <input type="text" placeholder="Nome da cultivar..." value="BRS">
-            </div>
-            <div class="filter-group">
-                <label>Município</label>
-                <input type="text" placeholder="Nome do município...">
-            </div>
-            <div class="filter-group">
-                <label>Status</label>
-                <select>
-                    <option value="">Todos</option>
-                    <option selected>Homologado</option>
-                    <option>Em andamento</option>
-                    <option>Cancelado</option>
-                </select>
-            </div>
-        </div>
-        <div class="filters-actions">
-            <button class="btn btn-primary">Aplicar Filtros</button>
-            <button class="btn btn-secondary">Limpar</button>
-        </div>
-    </section>
-
-    <!-- Tabs -->
-    <nav class="nav-tabs">
-        <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
-        <button class="nav-tab" onclick="showTab('mapa')">Mapa de Calor</button>
-        <button class="nav-tab" onclick="showTab('comparativo')">Comparativo</button>
-        <button class="nav-tab" onclick="showTab('dados')">Dados</button>
-    </nav>
-
-    <!-- ===== TAB: DASHBOARD ===== -->
-    <div class="tab-panel active" id="panel-dashboard">
-        <div class="dashboard-grid">
-            <div class="card">
-                <div class="card-title">Evolução por Safra - Produção Estimada (t)</div>
-                <div class="chart-container">
-                    <canvas id="chart-evolucao"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-title">Top 10 Estados - Produção</div>
-                <div class="chart-container">
-                    <canvas id="chart-ranking-uf"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-title">Top 10 Cultivares - Produção</div>
-                <div class="chart-container">
-                    <canvas id="chart-ranking-cultivar"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-title">Top 10 Municípios - Área Plantada</div>
-                <div class="chart-container">
-                    <canvas id="chart-ranking-municipio"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== TAB: MAPA ===== -->
-    <div class="tab-panel" id="panel-mapa">
-        <div class="card">
-            <div class="card-title">Mapa de Calor - Brasil</div>
-            <div class="map-controls">
-                <button class="btn btn-sm active" style="background:var(--primary);color:white;">Produção</button>
-                <button class="btn btn-sm">Área</button>
-                <button class="btn btn-sm">Registros</button>
-                <button class="btn btn-sm">Cultivares</button>
-            </div>
-            <div id="brazil-map-container"></div>
-        </div>
-        <div class="card">
-            <div class="card-title">Detalhamento por Estado</div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>UF</th><th>Registros</th><th>Área (ha)</th>
-                            <th>Prod. Estimada (t)</th><th>Prod. Bruta (t)</th>
-                            <th>Cultivares</th><th>Municípios</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-uf-detail"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== TAB: COMPARATIVO ===== -->
-    <div class="tab-panel" id="panel-comparativo">
-        <div class="card">
-            <div class="card-title">Comparar</div>
-            <div class="filters-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-                <div class="filter-group">
-                    <label>Comparar por</label>
-                    <select>
-                        <option selected>Safra x Safra</option>
-                        <option>Cultivar x Cultivar</option>
-                        <option>Evolução por Estado</option>
-                        <option>Evolução por Cultivar</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Selecione (Ctrl+click)</label>
-                    <select multiple style="height:120px;">
-                        <option selected>2023/2023</option>
-                        <option selected>2022/2022</option>
-                        <option>2021/2021</option>
-                        <option>2020/2020</option>
-                    </select>
-                </div>
-                <div class="filter-group" style="display:flex;align-items:flex-end;">
-                    <button class="btn btn-primary">Comparar</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="comparison-grid" id="compare-cards">
-            <div class="compare-card" style="border-left-color:#2e7d32;">
-                <h3>2023/2023</h3>
-                <div class="metric-row"><span>Registros</span><span class="metric-value">124.530</span></div>
-                <div class="metric-row"><span>Área Total (ha)</span><span class="metric-value">456.230,50</span></div>
-                <div class="metric-row"><span>Prod. Estimada (t)</span><span class="metric-value">2.841.500,00</span></div>
-                <div class="metric-row"><span>Prod. Bruta (t)</span><span class="metric-value">2.650.320,80</span></div>
-                <div class="metric-row"><span>Cultivares</span><span class="metric-value">1.842</span></div>
-                <div class="metric-row"><span>Municípios</span><span class="metric-value">2.105</span></div>
-                <div class="metric-row"><span>Estados</span><span class="metric-value">24</span></div>
-            </div>
-            <div class="compare-card" style="border-left-color:#1565c0;">
-                <h3>2022/2022</h3>
-                <div class="metric-row"><span>Registros</span><span class="metric-value">118.270</span></div>
-                <div class="metric-row"><span>Área Total (ha)</span><span class="metric-value">412.890,30</span></div>
-                <div class="metric-row"><span>Prod. Estimada (t)</span><span class="metric-value">2.520.100,00</span></div>
-                <div class="metric-row"><span>Prod. Bruta (t)</span><span class="metric-value">2.310.450,60</span></div>
-                <div class="metric-row"><span>Cultivares</span><span class="metric-value">1.720</span></div>
-                <div class="metric-row"><span>Municípios</span><span class="metric-value">1.980</span></div>
-                <div class="metric-row"><span>Estados</span><span class="metric-value">23</span></div>
-            </div>
-        </div>
-        <div class="card" style="margin-top:20px;">
-            <div class="card-title">Gráfico Comparativo</div>
-            <div class="chart-container">
-                <canvas id="chart-comparativo"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== TAB: DADOS ===== -->
-    <div class="tab-panel" id="panel-dados">
-        <div class="results-info">
-            <span class="results-count">847.392 registro(s)</span>
-            <span>Página 1 de 16.948</span>
-        </div>
-
-        <div class="card">
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Safra <span class="sort-icon">&#8595;</span></th>
-                            <th>Espécie <span class="sort-icon">&#8597;</span></th>
-                            <th>Cat. <span class="sort-icon">&#8597;</span></th>
-                            <th>Cultivar <span class="sort-icon">&#8597;</span></th>
-                            <th>Município <span class="sort-icon">&#8597;</span></th>
-                            <th>UF <span class="sort-icon">&#8597;</span></th>
-                            <th>Status <span class="sort-icon">&#8597;</span></th>
-                            <th>Área (ha) <span class="sort-icon">&#8597;</span></th>
-                            <th>Prod. Bruta <span class="sort-icon">&#8597;</span></th>
-                            <th>Prod. Est. <span class="sort-icon">&#8597;</span></th>
-                            <th>Plantio <span class="sort-icon">&#8597;</span></th>
-                            <th>Colheita <span class="sort-icon">&#8597;</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>2023/2023</td><td>Zea mays L.</td><td>S2</td><td>BRS 2022</td><td>Cedro</td><td>PE</td><td>Homologado</td><td class="num">9,50</td><td class="num">-</td><td class="num">38,00</td><td>01/01/2013</td><td>-</td></tr>
-                        <tr><td>2023/2023</td><td>Zea mays L.</td><td>S1</td><td>BRS Gorutuba</td><td>Petrolina</td><td>PE</td><td>Homologado</td><td class="num">15,00</td><td class="num">52,50</td><td class="num">60,00</td><td>15/02/2013</td><td>20/07/2013</td></tr>
-                        <tr><td>2023/2023</td><td>Glycine max (L.) Merr.</td><td>S2</td><td>BRS 388</td><td>Sorriso</td><td>MT</td><td>Homologado</td><td class="num">250,00</td><td class="num">825,00</td><td class="num">900,00</td><td>10/10/2022</td><td>15/02/2023</td></tr>
-                        <tr><td>2023/2023</td><td>Glycine max (L.) Merr.</td><td>C1</td><td>TMG 2381</td><td>Rio Verde</td><td>GO</td><td>Homologado</td><td class="num">180,00</td><td class="num">612,00</td><td class="num">648,00</td><td>05/10/2022</td><td>10/02/2023</td></tr>
-                        <tr><td>2023/2023</td><td>Glycine max (L.) Merr.</td><td>S1</td><td>NA 5909 RG</td><td>Londrina</td><td>PR</td><td>Homologado</td><td class="num">120,00</td><td class="num">408,00</td><td class="num">432,00</td><td>15/10/2022</td><td>20/02/2023</td></tr>
-                        <tr><td>2023/2023</td><td>Oryza sativa L.</td><td>S2</td><td>BRS Catiana</td><td>Pelotas</td><td>RS</td><td>Homologado</td><td class="num">85,00</td><td class="num">595,00</td><td class="num">612,00</td><td>01/11/2022</td><td>01/03/2023</td></tr>
-                        <tr><td>2022/2022</td><td>Zea mays L.</td><td>S2</td><td>BRS 3046</td><td>Sete Lagoas</td><td>MG</td><td>Homologado</td><td class="num">45,00</td><td class="num">270,00</td><td class="num">292,50</td><td>20/11/2021</td><td>15/04/2022</td></tr>
-                        <tr><td>2022/2022</td><td>Glycine max (L.) Merr.</td><td>S1</td><td>M 8210 IPRO</td><td>Dourados</td><td>MS</td><td>Homologado</td><td class="num">200,00</td><td class="num">660,00</td><td class="num">720,00</td><td>10/10/2021</td><td>10/02/2022</td></tr>
-                        <tr><td>2022/2022</td><td>Triticum aestivum L.</td><td>C2</td><td>BRS Marcante</td><td>Passo Fundo</td><td>RS</td><td>Homologado</td><td class="num">60,00</td><td class="num">180,00</td><td class="num">198,00</td><td>01/06/2022</td><td>15/10/2022</td></tr>
-                        <tr><td>2022/2022</td><td>Gossypium hirsutum L.</td><td>S1</td><td>BRS 433 FL B2RF</td><td>Luís Eduardo Magalhães</td><td>BA</td><td>Homologado</td><td class="num">350,00</td><td class="num">1.575,00</td><td class="num">1.680,00</td><td>05/12/2021</td><td>20/06/2022</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="pagination">
-            <button disabled>Anterior</button>
-            <button class="active">1</button>
-            <button>2</button>
-            <button>3</button>
-            <span style="padding:8px 4px;">...</span>
-            <button>16.948</button>
-            <button>Próximo</button>
-        </div>
-    </div>
-
-</main>
-
-<footer class="footer">
-    DataSemente &copy; 2026 - Painel gerencial de dados de campo e produção de sementes do Brasil
-</footer>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="assets/js/brazil-map.js"></script>
 <script>
-// ===== TAB NAVIGATION =====
-function showTab(tab) {
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById('panel-' + tab).classList.add('active');
+// Nav
+function showPanel(name, btn) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+    document.getElementById('panel-title').textContent = btn.textContent.trim();
+    document.getElementById('sidebar').classList.remove('open');
 }
 
-// ===== MOCK DATA: CHARTS =====
-document.addEventListener('DOMContentLoaded', () => {
+// Cultivar depends on especie
+const cultivarMap = {
+    'soja': ['BRS 388', 'BRS 399', 'TMG 2381', 'NA 5909 RG', 'M 8210 IPRO', 'DM 66i78', 'BMX Potência'],
+    'milho': ['BRS 2022', 'BRS 3046', 'BRS Gorutuba', 'AG 1051', 'BR 106', 'BRS 4103'],
+    'arroz': ['BRS Catiana', 'BRS Pampeira', 'BRS A702 CL', 'IRGA 424 RI'],
+    'trigo': ['BRS Marcante', 'BRS Reponte', 'BRS Parrudo', 'TBIO Toruk'],
+    'algodao': ['BRS 433 FL B2RF', 'BRS 430 B2RF', 'TMG 81 WS'],
+};
 
-    // Evolução por safra
+function updateCultivar() {
+    const especie = document.getElementById('demo-especie').value;
+    const select = document.getElementById('demo-cultivar');
+    select.innerHTML = '<option value="">Todas as cultivares</option>';
+    if (especie && cultivarMap[especie]) {
+        cultivarMap[especie].forEach(cv => {
+            const opt = document.createElement('option');
+            opt.value = cv; opt.textContent = cv;
+            select.appendChild(opt);
+        });
+    } else if (!especie) {
+        select.innerHTML = '<option value="">Todas (selecione espécie)</option>';
+    }
+}
+
+function switchMetric(btn, metric) {
+    document.querySelectorAll('.metric-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    BrazilMap.render('brazil-map-container', mockHeatmapData, metric);
+    fillUfTable();
+}
+
+// Chart.js dark theme
+Chart.defaults.color = '#8b8ca7';
+Chart.defaults.borderColor = '#2d2d44';
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+const chartTooltip = { backgroundColor: '#1e1e2d', borderColor: '#2d2d44', borderWidth: 1, titleColor: '#a29bfe', bodyColor: '#e8e8f0' };
+const gridColor = '#1e1e2d';
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Evolution
     new Chart(document.getElementById('chart-evolucao'), {
         type: 'line',
         data: {
@@ -342,174 +326,92 @@ document.addEventListener('DOMContentLoaded', () => {
             datasets: [{
                 label: 'Produção Estimada (t)',
                 data: [1250000, 1480000, 1620000, 1890000, 2520000, 2841500, 3120000],
-                borderColor: '#2e7d32',
-                backgroundColor: '#2e7d3220',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 5,
-                pointHoverRadius: 8,
+                borderColor: '#6c5ce7', backgroundColor: '#6c5ce718', fill: true,
+                tension: 0.4, pointRadius: 5, pointHoverRadius: 8, borderWidth: 2.5,
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { callback: v => (v/1000000).toFixed(1) + 'M' }
-                }
-            }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: chartTooltip },
+            scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { callback: v => (v/1e6).toFixed(1) + 'M' } }, x: { grid: { color: gridColor } } } }
     });
 
-    // Top 10 Estados
+    // Rankings
+    const barOpts = (label) => ({ responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false }, tooltip: chartTooltip },
+        scales: { x: { beginAtZero: true, grid: { color: gridColor }, ticks: { callback: v => (v/1000).toFixed(0) + 'k' } }, y: { grid: { display: false } } } });
+
     new Chart(document.getElementById('chart-ranking-uf'), {
-        type: 'bar',
-        data: {
-            labels: ['MT', 'PR', 'GO', 'MS', 'RS', 'MG', 'BA', 'SP', 'TO', 'MA'],
-            datasets: [{
-                label: 'Produção (t)',
-                data: [980000, 750000, 620000, 480000, 410000, 320000, 280000, 195000, 150000, 95000],
-                backgroundColor: '#2e7d32cc',
-                borderColor: '#1b5e20',
-                borderWidth: 1,
-                borderRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { beginAtZero: true, ticks: { callback: v => (v/1000).toFixed(0) + 'k' } }
-            }
-        }
-    });
+        type: 'bar', data: { labels: ['MT','PR','GO','MS','RS','MG','BA','SP','TO','MA'],
+        datasets: [{ data: [980000,750000,620000,480000,410000,320000,280000,195000,150000,95000], backgroundColor: 'rgba(108,92,231,0.7)', borderColor: '#6c5ce7', borderWidth: 1, borderRadius: 6 }] },
+        options: barOpts() });
 
-    // Top 10 Cultivares
     new Chart(document.getElementById('chart-ranking-cultivar'), {
-        type: 'bar',
-        data: {
-            labels: ['BRS 388', 'M 8210 IPRO', 'TMG 2381', 'NA 5909 RG', 'BRS 433 FL', 'BRS Catiana', 'BRS 3046', 'BRS Gorutuba', 'DM 66i78', 'NK 7059'],
-            datasets: [{
-                label: 'Produção (t)',
-                data: [520000, 410000, 380000, 290000, 245000, 190000, 165000, 130000, 110000, 85000],
-                backgroundColor: '#2e7d32cc',
-                borderColor: '#1b5e20',
-                borderWidth: 1,
-                borderRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { beginAtZero: true, ticks: { callback: v => (v/1000).toFixed(0) + 'k' } }
-            }
-        }
-    });
+        type: 'bar', data: { labels: ['BRS 388','M 8210','TMG 2381','NA 5909','BRS 433','BRS Catiana','BRS 3046','Gorutuba','DM 66i78','NK 7059'],
+        datasets: [{ data: [520000,410000,380000,290000,245000,190000,165000,130000,110000,85000], backgroundColor: 'rgba(108,92,231,0.7)', borderColor: '#6c5ce7', borderWidth: 1, borderRadius: 6 }] },
+        options: barOpts() });
 
-    // Top 10 Municípios
     new Chart(document.getElementById('chart-ranking-municipio'), {
-        type: 'bar',
-        data: {
-            labels: ['Sorriso-MT', 'Rio Verde-GO', 'Dourados-MS', 'Londrina-PR', 'L.E.Magalhães-BA', 'Passo Fundo-RS', 'Cristalina-GO', 'Maracaju-MS', 'Cascavel-PR', 'Uberaba-MG'],
-            datasets: [{
-                label: 'Área (ha)',
-                data: [42000, 38000, 31000, 28000, 25000, 22000, 19500, 18000, 16500, 14000],
-                backgroundColor: '#2e7d32cc',
-                borderColor: '#1b5e20',
-                borderWidth: 1,
-                borderRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { beginAtZero: true, ticks: { callback: v => (v/1000).toFixed(0) + 'k ha' } }
-            }
-        }
-    });
+        type: 'bar', data: { labels: ['Sorriso-MT','Rio Verde-GO','Dourados-MS','Londrina-PR','L.E.Magalhães-BA','P.Fundo-RS','Cristalina-GO','Maracaju-MS','Cascavel-PR','Uberaba-MG'],
+        datasets: [{ data: [42000,38000,31000,28000,25000,22000,19500,18000,16500,14000], backgroundColor: 'rgba(108,92,231,0.7)', borderColor: '#6c5ce7', borderWidth: 1, borderRadius: 6 }] },
+        options: barOpts() });
 
     // Comparativo
     new Chart(document.getElementById('chart-comparativo'), {
-        type: 'bar',
-        data: {
-            labels: ['2023/2023', '2022/2022'],
-            datasets: [
-                { label: 'Área (ha)', data: [456230, 412890], backgroundColor: '#2e7d32cc' },
-                { label: 'Prod. Estimada (t)', data: [2841500, 2520100], backgroundColor: '#1565c0cc' },
-                { label: 'Prod. Bruta (t)', data: [2650320, 2310450], backgroundColor: '#c62828cc' },
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, ticks: { callback: v => (v/1000000).toFixed(1) + 'M' } }
-            }
-        }
+        type: 'bar', data: { labels: ['2023/2023', '2022/2022'],
+        datasets: [
+            { label: 'Área (ha)', data: [456230, 412890], backgroundColor: 'rgba(108,92,231,0.7)' },
+            { label: 'Prod. Estimada (t)', data: [2841500, 2520100], backgroundColor: 'rgba(0,184,148,0.7)' },
+            { label: 'Prod. Bruta (t)', data: [2650320, 2310450], backgroundColor: 'rgba(225,112,85,0.7)' },
+        ] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: chartTooltip },
+            scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { callback: v => (v/1e6).toFixed(1) + 'M' } }, x: { grid: { color: gridColor } } } }
     });
 
-    // ===== MAPA DE CALOR =====
-    const mockHeatmapData = [
-        { uf: 'MT', registros: 95420, total_area: 320000, total_producao: 980000, total_producao_bruta: 890000, total_cultivares: 450, total_municipios: 141 },
-        { uf: 'PR', registros: 82100, total_area: 245000, total_producao: 750000, total_producao_bruta: 680000, total_cultivares: 520, total_municipios: 399 },
-        { uf: 'GO', registros: 68500, total_area: 198000, total_producao: 620000, total_producao_bruta: 570000, total_cultivares: 380, total_municipios: 246 },
-        { uf: 'MS', registros: 52000, total_area: 165000, total_producao: 480000, total_producao_bruta: 430000, total_cultivares: 310, total_municipios: 79 },
-        { uf: 'RS', registros: 71000, total_area: 180000, total_producao: 410000, total_producao_bruta: 370000, total_cultivares: 480, total_municipios: 497 },
-        { uf: 'MG', registros: 54200, total_area: 142000, total_producao: 320000, total_producao_bruta: 290000, total_cultivares: 350, total_municipios: 853 },
-        { uf: 'BA', registros: 38000, total_area: 115000, total_producao: 280000, total_producao_bruta: 250000, total_cultivares: 220, total_municipios: 417 },
-        { uf: 'SP', registros: 42000, total_area: 98000, total_producao: 195000, total_producao_bruta: 175000, total_cultivares: 290, total_municipios: 645 },
-        { uf: 'TO', registros: 28000, total_area: 72000, total_producao: 150000, total_producao_bruta: 135000, total_cultivares: 180, total_municipios: 139 },
-        { uf: 'MA', registros: 18000, total_area: 48000, total_producao: 95000, total_producao_bruta: 82000, total_cultivares: 120, total_municipios: 217 },
-        { uf: 'SC', registros: 32000, total_area: 62000, total_producao: 85000, total_producao_bruta: 78000, total_cultivares: 260, total_municipios: 295 },
-        { uf: 'PI', registros: 12000, total_area: 35000, total_producao: 72000, total_producao_bruta: 64000, total_cultivares: 95, total_municipios: 224 },
-        { uf: 'PA', registros: 9500, total_area: 28000, total_producao: 55000, total_producao_bruta: 48000, total_cultivares: 80, total_municipios: 144 },
-        { uf: 'RO', registros: 8200, total_area: 22000, total_producao: 42000, total_producao_bruta: 37000, total_cultivares: 70, total_municipios: 52 },
-        { uf: 'DF', registros: 4500, total_area: 12000, total_producao: 28000, total_producao_bruta: 25000, total_cultivares: 85, total_municipios: 1 },
-        { uf: 'PE', registros: 6800, total_area: 8500, total_producao: 18000, total_producao_bruta: 15000, total_cultivares: 65, total_municipios: 185 },
-        { uf: 'CE', registros: 5200, total_area: 6000, total_producao: 12000, total_producao_bruta: 10500, total_cultivares: 48, total_municipios: 184 },
-        { uf: 'AL', registros: 3800, total_area: 4200, total_producao: 8500, total_producao_bruta: 7200, total_cultivares: 35, total_municipios: 102 },
-        { uf: 'SE', registros: 2500, total_area: 3100, total_producao: 6200, total_producao_bruta: 5400, total_cultivares: 28, total_municipios: 75 },
-        { uf: 'ES', registros: 4200, total_area: 5500, total_producao: 9800, total_producao_bruta: 8700, total_cultivares: 42, total_municipios: 78 },
-        { uf: 'RJ', registros: 2100, total_area: 2800, total_producao: 4500, total_producao_bruta: 3900, total_cultivares: 30, total_municipios: 92 },
-        { uf: 'RN', registros: 2800, total_area: 3200, total_producao: 5800, total_producao_bruta: 5100, total_cultivares: 32, total_municipios: 167 },
-        { uf: 'PB', registros: 3100, total_area: 3500, total_producao: 6500, total_producao_bruta: 5700, total_cultivares: 38, total_municipios: 223 },
-        { uf: 'AM', registros: 1200, total_area: 1800, total_producao: 2800, total_producao_bruta: 2400, total_cultivares: 18, total_municipios: 62 },
-        { uf: 'AC', registros: 800, total_area: 1200, total_producao: 1800, total_producao_bruta: 1500, total_cultivares: 12, total_municipios: 22 },
-        { uf: 'RR', registros: 600, total_area: 900, total_producao: 1400, total_producao_bruta: 1200, total_cultivares: 10, total_municipios: 15 },
-        { uf: 'AP', registros: 400, total_area: 600, total_producao: 900, total_producao_bruta: 750, total_cultivares: 8, total_municipios: 16 },
+    // Heatmap
+    window.mockHeatmapData = [
+        { uf:'MT', registros:95420, total_area:320000, total_producao:980000, total_producao_bruta:890000, total_cultivares:450, total_municipios:141 },
+        { uf:'PR', registros:82100, total_area:245000, total_producao:750000, total_producao_bruta:680000, total_cultivares:520, total_municipios:399 },
+        { uf:'GO', registros:68500, total_area:198000, total_producao:620000, total_producao_bruta:570000, total_cultivares:380, total_municipios:246 },
+        { uf:'MS', registros:52000, total_area:165000, total_producao:480000, total_producao_bruta:430000, total_cultivares:310, total_municipios:79 },
+        { uf:'RS', registros:71000, total_area:180000, total_producao:410000, total_producao_bruta:370000, total_cultivares:480, total_municipios:497 },
+        { uf:'MG', registros:54200, total_area:142000, total_producao:320000, total_producao_bruta:290000, total_cultivares:350, total_municipios:853 },
+        { uf:'BA', registros:38000, total_area:115000, total_producao:280000, total_producao_bruta:250000, total_cultivares:220, total_municipios:417 },
+        { uf:'SP', registros:42000, total_area:98000, total_producao:195000, total_producao_bruta:175000, total_cultivares:290, total_municipios:645 },
+        { uf:'TO', registros:28000, total_area:72000, total_producao:150000, total_producao_bruta:135000, total_cultivares:180, total_municipios:139 },
+        { uf:'MA', registros:18000, total_area:48000, total_producao:95000, total_producao_bruta:82000, total_cultivares:120, total_municipios:217 },
+        { uf:'SC', registros:32000, total_area:62000, total_producao:85000, total_producao_bruta:78000, total_cultivares:260, total_municipios:295 },
+        { uf:'PI', registros:12000, total_area:35000, total_producao:72000, total_producao_bruta:64000, total_cultivares:95, total_municipios:224 },
+        { uf:'PA', registros:9500, total_area:28000, total_producao:55000, total_producao_bruta:48000, total_cultivares:80, total_municipios:144 },
+        { uf:'RO', registros:8200, total_area:22000, total_producao:42000, total_producao_bruta:37000, total_cultivares:70, total_municipios:52 },
+        { uf:'DF', registros:4500, total_area:12000, total_producao:28000, total_producao_bruta:25000, total_cultivares:85, total_municipios:1 },
+        { uf:'PE', registros:6800, total_area:8500, total_producao:18000, total_producao_bruta:15000, total_cultivares:65, total_municipios:185 },
+        { uf:'CE', registros:5200, total_area:6000, total_producao:12000, total_producao_bruta:10500, total_cultivares:48, total_municipios:184 },
+        { uf:'AL', registros:3800, total_area:4200, total_producao:8500, total_producao_bruta:7200, total_cultivares:35, total_municipios:102 },
+        { uf:'SE', registros:2500, total_area:3100, total_producao:6200, total_producao_bruta:5400, total_cultivares:28, total_municipios:75 },
+        { uf:'ES', registros:4200, total_area:5500, total_producao:9800, total_producao_bruta:8700, total_cultivares:42, total_municipios:78 },
+        { uf:'RJ', registros:2100, total_area:2800, total_producao:4500, total_producao_bruta:3900, total_cultivares:30, total_municipios:92 },
+        { uf:'RN', registros:2800, total_area:3200, total_producao:5800, total_producao_bruta:5100, total_cultivares:32, total_municipios:167 },
+        { uf:'PB', registros:3100, total_area:3500, total_producao:6500, total_producao_bruta:5700, total_cultivares:38, total_municipios:223 },
+        { uf:'AM', registros:1200, total_area:1800, total_producao:2800, total_producao_bruta:2400, total_cultivares:18, total_municipios:62 },
+        { uf:'AC', registros:800, total_area:1200, total_producao:1800, total_producao_bruta:1500, total_cultivares:12, total_municipios:22 },
+        { uf:'RR', registros:600, total_area:900, total_producao:1400, total_producao_bruta:1200, total_cultivares:10, total_municipios:15 },
+        { uf:'AP', registros:400, total_area:600, total_producao:900, total_producao_bruta:750, total_cultivares:8, total_municipios:16 },
     ];
 
     BrazilMap.render('brazil-map-container', mockHeatmapData, 'total_producao');
+    fillUfTable();
+});
 
-    // Tabela de detalhamento UF
+function fillUfTable() {
     const tbody = document.getElementById('tbody-uf-detail');
+    tbody.innerHTML = '';
     const fmt = n => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     const fmtI = n => Number(n).toLocaleString('pt-BR');
-
-    mockHeatmapData.forEach(row => {
+    mockHeatmapData.forEach(r => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${row.uf}</strong></td>
-            <td class="num">${fmtI(row.registros)}</td>
-            <td class="num">${fmt(row.total_area)}</td>
-            <td class="num">${fmt(row.total_producao)}</td>
-            <td class="num">${fmt(row.total_producao_bruta)}</td>
-            <td class="num">${fmtI(row.total_cultivares)}</td>
-            <td class="num">${fmtI(row.total_municipios)}</td>
-        `;
+        tr.innerHTML = `<td>${r.uf}</td><td class="num">${fmtI(r.registros)}</td><td class="num">${fmt(r.total_area)}</td><td class="num">${fmt(r.total_producao)}</td><td class="num">${fmt(r.total_producao_bruta)}</td><td class="num">${fmtI(r.total_cultivares)}</td><td class="num">${fmtI(r.total_municipios)}</td>`;
         tbody.appendChild(tr);
     });
-});
+}
 </script>
 </body>
 </html>

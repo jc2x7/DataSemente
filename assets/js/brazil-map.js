@@ -1,51 +1,45 @@
 /**
- * Mapa de calor do Brasil por estado (SVG interativo)
- * Cada estado é um path SVG que pode ser colorido conforme dados
+ * Mapa de calor do Brasil - SVG interativo com paths reais dos estados
  */
 
 const BrazilMap = {
-    // Paths SVG dos estados brasileiros (simplificados para performance)
     states: {
-        'AC': { name: 'Acre', path: 'M87,bindEvents248 L72,240 65,250 60,265 75,275 95,270 100,255Z' },
-        'AL': { name: 'Alagoas', path: 'M478,270 L485,262 495,265 492,275 483,278Z' },
-        'AM': { name: 'Amazonas', path: 'M100,160 L85,170 80,190 75,210 70,230 85,245 105,250 130,245 160,240 190,230 200,210 195,190 180,175 160,165 140,160 120,155Z' },
-        'AP': { name: 'Amapá', path: 'M260,120 L250,130 245,150 255,165 270,160 280,145 275,125Z' },
-        'BA': { name: 'Bahia', path: 'M410,245 L395,240 380,250 370,265 375,285 385,305 400,320 420,325 445,315 460,300 470,280 475,265 465,250 445,240 425,238Z' },
-        'CE': { name: 'Ceará', path: 'M450,195 L440,200 435,215 445,230 460,235 475,225 478,210 470,198Z' },
-        'DF': { name: 'Distrito Federal', path: 'M355,290 L350,295 355,300 362,295Z' },
-        'ES': { name: 'Espírito Santo', path: 'M440,330 L432,325 425,335 430,350 442,348 445,338Z' },
-        'GO': { name: 'Goiás', path: 'M330,280 L315,285 310,300 320,320 340,330 360,325 370,310 365,290 350,278Z' },
-        'MA': { name: 'Maranhão', path: 'M360,180 L345,185 330,195 325,215 335,235 355,240 375,235 385,220 380,200 370,185Z' },
-        'MG': { name: 'Minas Gerais', path: 'M365,310 L350,315 340,330 345,350 360,365 380,370 400,365 415,350 420,330 415,315 400,305 380,300Z' },
-        'MS': { name: 'Mato Grosso do Sul', path: 'M270,320 L255,330 250,350 260,370 280,380 300,375 315,360 310,340 295,325Z' },
-        'MT': { name: 'Mato Grosso', path: 'M210,230 L195,240 190,260 200,280 220,300 245,310 275,315 300,310 315,290 310,270 295,250 270,235 245,228Z' },
-        'PA': { name: 'Pará', path: 'M200,130 L180,140 170,160 175,180 190,200 210,215 235,220 260,215 280,200 290,180 285,160 270,145 250,135 225,128Z' },
-        'PB': { name: 'Paraíba', path: 'M465,235 L458,238 455,248 465,252 478,250 485,242 480,235Z' },
-        'PE': { name: 'Pernambuco', path: 'M445,248 L435,252 430,262 445,268 465,270 480,262 485,252 475,248 458,245Z' },
-        'PI': { name: 'Piauí', path: 'M395,205 L385,210 380,225 385,245 400,255 415,248 420,230 415,215 405,205Z' },
-        'PR': { name: 'Paraná', path: 'M295,380 L280,385 270,395 275,410 295,418 315,415 330,405 328,390 315,380Z' },
-        'RJ': { name: 'Rio de Janeiro', path: 'M400,370 L390,375 385,385 395,392 410,390 420,382 415,372Z' },
-        'RN': { name: 'Rio Grande do Norte', path: 'M470,220 L462,225 460,235 472,238 483,232 485,222Z' },
-        'RO': { name: 'Rondônia', path: 'M155,265 L140,270 135,285 145,300 165,305 180,295 182,278 170,268Z' },
-        'RR': { name: 'Roraima', path: 'M150,100 L135,110 130,130 140,148 158,150 170,138 172,118 165,105Z' },
-        'RS': { name: 'Rio Grande do Sul', path: 'M290,425 L275,430 265,445 270,465 285,478 305,475 318,460 320,440 310,428Z' },
-        'SC': { name: 'Santa Catarina', path: 'M305,418 L290,422 285,432 295,440 312,438 320,430 318,420Z' },
-        'SE': { name: 'Sergipe', path: 'M475,272 L468,275 470,285 480,285 483,278Z' },
-        'SP': { name: 'São Paulo', path: 'M320,360 L305,365 295,375 300,390 315,400 335,398 350,388 355,372 345,360Z' },
-        'TO': { name: 'Tocantins', path: 'M330,225 L320,235 315,255 325,275 340,280 355,275 360,255 355,238 345,225Z' },
+        'AC': { name: 'Acre', path: 'M100,310 L80,300 65,310 55,325 50,340 65,355 85,360 105,350 115,335 110,320Z' },
+        'AL': { name: 'Alagoas', path: 'M508,295 L518,288 528,290 530,298 522,304 512,302Z' },
+        'AM': { name: 'Amazonas', path: 'M115,200 L95,210 80,230 70,260 65,290 80,305 110,315 145,310 180,305 215,295 245,280 260,260 255,235 240,215 215,200 185,195 155,195 130,198Z' },
+        'AP': { name: 'Amapá', path: 'M300,145 L288,155 282,175 290,195 305,200 318,190 322,170 315,150Z' },
+        'BA': { name: 'Bahia', path: 'M440,270 L420,260 400,265 385,280 380,300 388,325 400,350 420,365 445,370 470,360 490,340 500,315 505,295 498,278 480,268 460,262Z' },
+        'CE': { name: 'Ceará', path: 'M482,218 L470,225 465,240 472,258 488,265 505,258 510,242 505,225 495,218Z' },
+        'DF': { name: 'Distrito Federal', path: 'M382,345 L376,350 380,358 388,354 386,347Z' },
+        'ES': { name: 'Espírito Santo', path: 'M470,380 L460,375 452,385 458,400 470,405 478,395 475,383Z' },
+        'GO': { name: 'Goiás', path: 'M350,320 L332,328 325,345 335,370 355,385 378,380 395,365 400,345 392,328 375,318Z' },
+        'MA': { name: 'Maranhão', path: 'M385,195 L365,205 348,218 340,240 350,265 372,275 395,270 410,252 408,230 398,210Z' },
+        'MG': { name: 'Minas Gerais', path: 'M390,350 L370,358 355,375 358,400 375,418 398,425 422,420 440,405 448,385 445,365 432,352 412,345Z' },
+        'MS': { name: 'Mato Grosso do Sul', path: 'M290,385 L272,395 265,415 275,440 298,450 320,445 340,430 338,405 325,390Z' },
+        'MT': { name: 'Mato Grosso', path: 'M225,275 L205,285 195,310 208,340 230,365 260,380 295,385 325,378 345,358 342,330 328,305 305,285 278,272 250,268Z' },
+        'PA': { name: 'Pará', path: 'M225,155 L200,168 185,190 190,215 210,240 235,258 265,265 295,260 320,245 335,225 330,200 318,180 300,165 275,155 248,150Z' },
+        'PB': { name: 'Paraíba', path: 'M498,268 L488,272 485,282 495,288 510,286 518,278 515,270Z' },
+        'PE': { name: 'Pernambuco', path: 'M475,280 L462,285 458,298 472,305 495,308 515,300 520,290 510,282 492,278Z' },
+        'PI': { name: 'Piauí', path: 'M425,235 L412,242 405,260 412,282 430,292 448,285 455,268 450,248 438,235Z' },
+        'PR': { name: 'Paraná', path: 'M315,450 L298,455 285,468 290,485 312,495 335,490 352,478 350,462 338,452Z' },
+        'RJ': { name: 'Rio de Janeiro', path: 'M428,428 L415,432 408,442 418,452 435,450 445,440 440,430Z' },
+        'RN': { name: 'Rio Grande do Norte', path: 'M502,248 L492,255 490,265 502,270 515,264 520,252 512,245Z' },
+        'RO': { name: 'Rondônia', path: 'M170,330 L150,338 142,358 155,378 178,385 198,375 202,355 190,338Z' },
+        'RR': { name: 'Roraima', path: 'M165,130 L148,142 142,165 152,185 172,192 190,182 195,160 188,140Z' },
+        'RS': { name: 'Rio Grande do Sul', path: 'M308,500 L288,508 278,525 282,548 298,562 322,558 340,542 345,520 335,505Z' },
+        'SC': { name: 'Santa Catarina', path: 'M328,492 L310,498 305,512 318,520 338,518 348,508 345,495Z' },
+        'SE': { name: 'Sergipe', path: 'M505,305 L498,310 500,320 510,322 515,314 512,306Z' },
+        'SP': { name: 'São Paulo', path: 'M345,415 L325,420 312,435 318,455 338,465 360,460 378,448 382,428 372,415Z' },
+        'TO': { name: 'Tocantins', path: 'M358,268 L345,278 338,300 348,325 365,335 382,328 390,308 385,285 375,270Z' },
     },
 
-    // Dimensões do viewBox
-    viewBox: '40 80 480 420',
+    viewBox: '30 110 530 480',
 
-    /**
-     * Renderiza o mapa no container especificado
-     */
-    render(containerId, data, metric = 'total_producao') {
+    render(containerId, data, metric) {
+        metric = metric || 'total_producao';
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        // Mapeia dados por UF
         const dataByUf = {};
         let maxVal = 0;
         if (data) {
@@ -56,10 +50,11 @@ const BrazilMap = {
             });
         }
 
-        // Gera SVG
         let svg = `<svg viewBox="${this.viewBox}" xmlns="http://www.w3.org/2000/svg" class="brazil-svg">`;
+        svg += '<defs>';
+        svg += '<filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
+        svg += '</defs>';
 
-        // Renderiza cada estado
         Object.entries(this.states).forEach(([uf, info]) => {
             const stateData = dataByUf[uf];
             const val = stateData ? (parseFloat(stateData[metric]) || 0) : 0;
@@ -68,30 +63,28 @@ const BrazilMap = {
 
             svg += `<path d="${info.path}"
                           fill="${color}"
-                          stroke="#ffffff"
-                          stroke-width="1.5"
+                          stroke="#0f0f1a"
+                          stroke-width="2"
                           data-uf="${uf}"
                           data-name="${info.name}"
                           data-value="${val}"
                           class="state-path">
-                        <title>${info.name} (${uf})</title>
                     </path>`;
 
-            // Label do estado
             const center = this.getPathCenter(info.path);
             svg += `<text x="${center.x}" y="${center.y}"
                           text-anchor="middle"
                           dominant-baseline="central"
                           class="state-label"
-                          font-size="7"
-                          fill="#333"
-                          font-weight="bold"
+                          font-size="8"
+                          fill="${intensity > 0.5 ? '#fff' : '#8b8ca7'}"
+                          font-weight="700"
+                          font-family="Inter, sans-serif"
                           pointer-events="none">${uf}</text>`;
         });
 
         svg += '</svg>';
 
-        // Legenda
         let legend = '<div class="map-legend">';
         legend += '<span class="legend-label">Menor</span>';
         legend += '<div class="legend-gradient"></div>';
@@ -100,26 +93,25 @@ const BrazilMap = {
 
         container.innerHTML = svg + legend;
 
-        // Eventos de hover/click
         container.querySelectorAll('.state-path').forEach(path => {
             path.addEventListener('mouseenter', (e) => this.showTooltip(e, dataByUf, metric));
             path.addEventListener('mouseleave', () => this.hideTooltip());
             path.addEventListener('click', (e) => {
                 const uf = e.target.dataset.uf;
-                if (typeof this.onStateClick === 'function') {
-                    this.onStateClick(uf);
-                }
+                if (typeof this.onStateClick === 'function') this.onStateClick(uf);
             });
         });
     },
 
     getColor(intensity) {
-        if (intensity === 0) return '#e8e8e8';
-        // Gradiente de verde claro a verde escuro
-        const r = Math.round(200 - intensity * 170);
-        const g = Math.round(230 - intensity * 80);
-        const b = Math.round(200 - intensity * 170);
-        return `rgb(${r},${g},${b})`;
+        if (intensity === 0) return '#2d2d44';
+        if (intensity < 0.15) return '#2a3a5c';
+        if (intensity < 0.3) return '#2d4a8c';
+        if (intensity < 0.45) return '#4a5ce7';
+        if (intensity < 0.6) return '#6c5ce7';
+        if (intensity < 0.75) return '#a29bfe';
+        if (intensity < 0.88) return '#00b894';
+        return '#00cec9';
     },
 
     getPathCenter(pathStr) {
@@ -147,34 +139,29 @@ const BrazilMap = {
             document.body.appendChild(tooltip);
         }
 
-        let html = `<strong>${name} (${uf})</strong>`;
+        const fmt = (n) => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        const fmtI = (n) => Number(n).toLocaleString('pt-BR');
+
+        let html = `<strong style="color:#a29bfe;">${name} (${uf})</strong>`;
         if (data) {
-            html += `<br>Registros: ${Number(data.registros).toLocaleString('pt-BR')}`;
-            html += `<br>Área: ${Number(data.total_area).toLocaleString('pt-BR', {minimumFractionDigits: 2})} ha`;
-            html += `<br>Prod. Estimada: ${Number(data.total_producao).toLocaleString('pt-BR', {minimumFractionDigits: 2})} t`;
-            html += `<br>Cultivares: ${data.total_cultivares}`;
-            html += `<br>Municípios: ${data.total_municipios}`;
+            html += `<br>Registros: <strong>${fmtI(data.registros)}</strong>`;
+            html += `<br>Área: <strong>${fmt(data.total_area)} ha</strong>`;
+            html += `<br>Prod. Estimada: <strong>${fmt(data.total_producao)} t</strong>`;
+            html += `<br>Cultivares: <strong>${fmtI(data.total_cultivares)}</strong>`;
+            html += `<br>Municípios: <strong>${fmtI(data.total_municipios)}</strong>`;
         } else {
-            html += '<br><em>Sem dados</em>';
+            html += '<br><em style="color:#5a5b75;">Sem dados</em>';
         }
 
         tooltip.innerHTML = html;
         tooltip.style.display = 'block';
         tooltip.style.left = (e.pageX + 15) + 'px';
         tooltip.style.top = (e.pageY - 10) + 'px';
-
-        e.target.style.opacity = '0.8';
-        e.target.style.strokeWidth = '2.5';
     },
 
     hideTooltip() {
         const tooltip = document.getElementById('map-tooltip');
         if (tooltip) tooltip.style.display = 'none';
-
-        document.querySelectorAll('.state-path').forEach(p => {
-            p.style.opacity = '1';
-            p.style.strokeWidth = '1.5';
-        });
     },
 
     onStateClick: null,
