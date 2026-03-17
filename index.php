@@ -35,7 +35,6 @@
         'Calculando indicadores de safra...',
         'Montando graficos e visualizacoes...',
         'Preparando mapa de calor...',
-        'Quase pronto...',
     ];
     let i = 0;
     const el = document.getElementById('loading-text');
@@ -44,9 +43,9 @@
         i++;
         if (i < msgs.length) {
             el.textContent = msgs[i];
-            bar.style.width = Math.min(90, (i / msgs.length) * 100) + '%';
+            bar.style.width = Math.min(85, ((i + 1) / msgs.length) * 90) + '%';
         }
-    }, 800);
+    }, 1500);
 })();
 </script>
 

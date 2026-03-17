@@ -129,19 +129,24 @@ const App = {
         });
     },
 
-    populateMultiSelect(filterName, options) {
+    populateMultiSelect(filterName, options, keepSelections) {
         const ms = document.querySelector(`.multi-select[data-filter="${filterName}"]`);
         if (!ms) return;
         const container = ms.querySelector('.dropdown-options');
+
+        // Preserve current selections that still exist in new options
+        const prevSelected = keepSelections ? (this.filterSelections[filterName] || []) : [];
+        const validSelected = prevSelected.filter(v => options.includes(v));
+
         container.innerHTML = '';
         this.filterOptions[filterName] = options;
-        this.filterSelections[filterName] = [];
 
         options.forEach((opt, idx) => {
             const div = document.createElement('div');
             div.className = 'dropdown-option';
             div.dataset.value = opt;
-            div.innerHTML = `<input type="checkbox" id="ms-${filterName}-${idx}" value="${this.esc(opt)}"><label for="ms-${filterName}-${idx}">${this.esc(opt)}</label>`;
+            const checked = validSelected.includes(opt) ? ' checked' : '';
+            div.innerHTML = `<input type="checkbox" id="ms-${filterName}-${idx}" value="${this.esc(opt)}"${checked}><label for="ms-${filterName}-${idx}">${this.esc(opt)}</label>`;
 
             const cb = div.querySelector('input');
             cb.addEventListener('change', (e) => {
@@ -157,24 +162,13 @@ const App = {
             });
             container.appendChild(div);
         });
+
+        // Update selections and trigger text
+        this.filterSelections[filterName] = validSelected;
+        this.updateTriggerText(ms, filterName, validSelected);
     },
 
-    filterDropdownOptions(ms, query) {
-        const q = query.toLowerCase().trim();
-        ms.querySelectorAll('.dropdown-option').forEach(opt => {
-            const text = opt.dataset.value.toLowerCase();
-            opt.classList.toggle('hidden', q !== '' && !text.includes(q));
-        });
-    },
-
-    syncSelections(ms) {
-        const filterName = ms.dataset.filter;
-        const selected = [];
-        ms.querySelectorAll('.dropdown-option input:checked').forEach(cb => {
-            selected.push(cb.value);
-        });
-        this.filterSelections[filterName] = selected;
-
+    updateTriggerText(ms, filterName, selected) {
         const triggerText = ms.querySelector('.trigger-text');
         const defaultTexts = {
             safra: 'Todas as safras',
@@ -196,11 +190,47 @@ const App = {
             triggerText.textContent = `${selected.length} selecionados`;
             triggerText.classList.add('has-selection');
         }
+    },
 
-        // Auto-apply filters after selection change
+    filterDropdownOptions(ms, query) {
+        const q = query.toLowerCase().trim();
+        ms.querySelectorAll('.dropdown-option').forEach(opt => {
+            const text = opt.dataset.value.toLowerCase();
+            opt.classList.toggle('hidden', q !== '' && !text.includes(q));
+        });
+    },
+
+    syncSelections(ms) {
+        const filterName = ms.dataset.filter;
+        const selected = [];
+        ms.querySelectorAll('.dropdown-option input:checked').forEach(cb => {
+            selected.push(cb.value);
+        });
+        this.filterSelections[filterName] = selected;
+        this.updateTriggerText(ms, filterName, selected);
+
+        // Auto-apply filters + refresh dependent dropdowns
         if (this.initialized) {
             clearTimeout(this._filterTimeout);
-            this._filterTimeout = setTimeout(() => this.applyFilters(), 600);
+            this._filterTimeout = setTimeout(() => {
+                this.refreshDependentFilters();
+                this.applyFilters();
+            }, 600);
+        }
+    },
+
+    async refreshDependentFilters() {
+        try {
+            const params = this.getFilterParams();
+            const res = await fetch('api/filter-options.php?' + params.toString());
+            const data = await res.json();
+            if (!data.success) return;
+
+            this.populateMultiSelect('municipio', data.options.municipios, true);
+            this.populateMultiSelect('cultivar', data.options.cultivares, true);
+            this.populateMultiSelect('especie', data.options.especies, true);
+        } catch (err) {
+            console.error('Erro ao atualizar filtros dependentes:', err);
         }
     },
 
