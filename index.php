@@ -14,9 +14,41 @@
 
 <!-- Loading overlay -->
 <div id="loading-overlay" class="loading-overlay">
-    <div class="spinner"></div>
-    <div class="loading-text">Carregando dados...</div>
+    <div class="loading-brand">
+        <div class="loading-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 6 4 10 4 14a8 8 0 1016 0c0-4-4-8-8-12z"/><path d="M12 22v-8"/><path d="M8 18c0-2.5 1.8-4 4-4s4 1.5 4 4"/></svg>
+        </div>
+        <div class="loading-title">DataSemente</div>
+    </div>
+    <div class="loading-bar-container">
+        <div class="loading-bar" id="loading-bar"></div>
+    </div>
+    <div class="loading-text" id="loading-text">Conectando ao banco de dados...</div>
 </div>
+<script>
+(function() {
+    const msgs = [
+        'Conectando ao banco de dados...',
+        'Carregando registros de campo...',
+        'Processando dados de producao...',
+        'Mapeando municipios e estados...',
+        'Calculando indicadores de safra...',
+        'Montando graficos e visualizacoes...',
+        'Preparando mapa de calor...',
+        'Quase pronto...',
+    ];
+    let i = 0;
+    const el = document.getElementById('loading-text');
+    const bar = document.getElementById('loading-bar');
+    setInterval(() => {
+        i++;
+        if (i < msgs.length) {
+            el.textContent = msgs[i];
+            bar.style.width = Math.min(90, (i / msgs.length) * 100) + '%';
+        }
+    }, 800);
+})();
+</script>
 
 <div class="app-layout">
 
@@ -139,6 +171,25 @@
                     </div>
                     <div class="multi-select-dropdown">
                         <div class="dropdown-search"><input type="text" placeholder="Buscar estado..."></div>
+                        <div class="dropdown-actions">
+                            <button class="select-all">Todos</button>
+                            <button class="select-none">Nenhum</button>
+                        </div>
+                        <div class="dropdown-options"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Municipio -->
+            <div class="filter-group">
+                <div class="filter-label">Municipio</div>
+                <div class="multi-select" data-filter="municipio">
+                    <div class="multi-select-trigger" tabindex="0">
+                        <span class="trigger-text">Todos os municipios</span>
+                        <svg class="trigger-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+                    </div>
+                    <div class="multi-select-dropdown">
+                        <div class="dropdown-search"><input type="text" placeholder="Buscar municipio..."></div>
                         <div class="dropdown-actions">
                             <button class="select-all">Todos</button>
                             <button class="select-none">Nenhum</button>

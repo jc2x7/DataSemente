@@ -78,8 +78,10 @@ function buildFilters(array $get): array
     }
 
     if (!empty($get['municipio'])) {
-        $where[] = 'municipio LIKE ?';
-        $params[] = '%' . $get['municipio'] . '%';
+        $municipios = is_array($get['municipio']) ? $get['municipio'] : [$get['municipio']];
+        $placeholders = implode(',', array_fill(0, count($municipios), '?'));
+        $where[] = "municipio IN ($placeholders)";
+        $params = array_merge($params, $municipios);
     }
 
     if (!empty($get['status'])) {

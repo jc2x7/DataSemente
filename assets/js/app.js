@@ -35,7 +35,13 @@ const App = {
         await this.applyFilters();
 
         this.initialized = true;
-        document.getElementById('loading-overlay').classList.add('hidden');
+        const bar = document.getElementById('loading-bar');
+        const loadText = document.getElementById('loading-text');
+        if (bar) bar.style.width = '100%';
+        if (loadText) loadText.textContent = 'Pronto!';
+        setTimeout(() => {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }, 400);
     },
 
     // ==================== METRIC BUTTONS ====================
@@ -176,6 +182,7 @@ const App = {
             cultivar: 'Todas as cultivares',
             categoria: 'Todas as categorias',
             uf: 'Todos os estados',
+            municipio: 'Todos os municipios',
             status: 'Todos os status',
         };
 
@@ -188,6 +195,12 @@ const App = {
         } else {
             triggerText.textContent = `${selected.length} selecionados`;
             triggerText.classList.add('has-selection');
+        }
+
+        // Auto-apply filters after selection change
+        if (this.initialized) {
+            clearTimeout(this._filterTimeout);
+            this._filterTimeout = setTimeout(() => this.applyFilters(), 600);
         }
     },
 
@@ -203,6 +216,7 @@ const App = {
             this.populateMultiSelect('cultivar', data.filters.cultivares);
             this.populateMultiSelect('categoria', data.filters.categorias);
             this.populateMultiSelect('uf', data.filters.estados);
+            this.populateMultiSelect('municipio', data.filters.municipios);
             this.populateMultiSelect('status', data.filters.statuses);
         } catch (err) {
             console.error('Erro ao carregar filtros:', err);
@@ -219,6 +233,7 @@ const App = {
         if (sel.cultivar && sel.cultivar.length) sel.cultivar.forEach(s => params.append('cultivar[]', s));
         if (sel.categoria && sel.categoria.length) sel.categoria.forEach(s => params.append('categoria[]', s));
         if (sel.uf && sel.uf.length) sel.uf.forEach(s => params.append('uf[]', s));
+        if (sel.municipio && sel.municipio.length) sel.municipio.forEach(s => params.append('municipio[]', s));
         if (sel.status && sel.status.length) sel.status.forEach(s => params.append('status[]', s));
 
         return params;
@@ -251,7 +266,7 @@ const App = {
         container.innerHTML = '';
         const labels = {
             safra: 'Safra', especie: 'Especie', cultivar: 'Cultivar',
-            categoria: 'Categoria', uf: 'UF', status: 'Status'
+            categoria: 'Categoria', uf: 'UF', municipio: 'Municipio', status: 'Status'
         };
 
         Object.entries(this.filterSelections).forEach(([key, values]) => {

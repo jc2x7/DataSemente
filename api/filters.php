@@ -23,6 +23,9 @@ try {
     $cultivares = $pdo->query("SELECT DISTINCT cultivar FROM dados_campo WHERE cultivar IS NOT NULL ORDER BY cultivar")
                       ->fetchAll(PDO::FETCH_COLUMN);
 
+    $municipios = $pdo->query("SELECT DISTINCT municipio FROM dados_campo WHERE municipio IS NOT NULL ORDER BY municipio")
+                      ->fetchAll(PDO::FETCH_COLUMN);
+
     $stats = $pdo->query("
         SELECT
             COUNT(*) as total_registros,
@@ -44,6 +47,7 @@ try {
             'estados'    => $estados,
             'statuses'   => $statuses,
             'cultivares' => $cultivares,
+            'municipios' => $municipios,
         ],
         'stats' => $stats,
     ], JSON_UNESCAPED_UNICODE);

@@ -48,23 +48,59 @@ body {
 /* ===== LOADING OVERLAY ===== */
 .loading-overlay {
     position: fixed; inset: 0;
-    background: rgba(255,255,255,0.95);
+    background: linear-gradient(135deg, #f8f9fb 0%, #e8ecf4 50%, #dbeafe 100%);
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     z-index: 9999;
-    transition: opacity 0.3s;
+    transition: opacity 0.5s;
+    gap: 28px;
 }
 .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-.loading-text { margin-top: 16px; font-size: 0.9rem; color: var(--text-secondary); }
 
-.spinner {
-    width: 40px; height: 40px;
-    border: 3px solid var(--border);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+.loading-brand { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.loading-logo {
+    width: 64px; height: 64px;
+    background: var(--primary);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    animation: pulse-logo 2s ease-in-out infinite;
+    box-shadow: 0 8px 30px rgba(37, 99, 235, 0.3);
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+.loading-logo svg { width: 36px; height: 36px; color: white; }
+.loading-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+}
+
+.loading-bar-container {
+    width: 280px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.loading-bar {
+    width: 5%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), #60a5fa);
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.loading-text {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-height: 22px;
+    transition: opacity 0.3s;
+}
+
+@keyframes pulse-logo {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
 
 /* ===== SIDEBAR ===== */
 .sidebar {
