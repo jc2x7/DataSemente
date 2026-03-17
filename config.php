@@ -4,10 +4,10 @@
  * Altere os valores conforme sua hospedagem Locaweb
  */
 
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'datasemente');
-define('DB_USER', 'seu_usuario');
-define('DB_PASS', 'sua_senha');
+define('DB_HOST', 'crmagrbr.mysql.dbaas.com.br');
+define('DB_NAME', 'crmagrbr');
+define('DB_USER', 'crmagrbr');
+define('DB_PASS', 'RRQ9QJ6qwgf!');
 define('DB_CHARSET', 'utf8mb4');
 
 define('ROWS_PER_PAGE', 50);
