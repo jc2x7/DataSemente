@@ -208,34 +208,35 @@
                 <div class="widget span-2">
                     <div class="widget-header">
                         <div>
-                            <div class="widget-title">Mapa de Calor do Brasil</div>
-                            <div class="widget-subtitle">Clique em um estado para filtrar</div>
+                            <div class="widget-title">Mapa de Calor por Municipio</div>
+                            <div class="widget-subtitle" id="heatmap-subtitle">Carregando...</div>
                         </div>
                         <div class="metric-pills">
-                            <button class="metric-pill active" data-metric="total_producao">Produção</button>
-                            <button class="metric-pill" data-metric="total_area">Área</button>
-                            <button class="metric-pill" data-metric="registros">Registros</button>
-                            <button class="metric-pill" data-metric="total_cultivares">Cultivares</button>
+                            <button class="metric-pill active" data-heatmap-metric="producao">Producao (t)</button>
+                            <button class="metric-pill" data-heatmap-metric="area">Area (ha)</button>
+                            <button class="metric-pill" data-heatmap-metric="registros">Registros</button>
                         </div>
                     </div>
-                    <div id="brazil-map-container"></div>
+                    <div id="heatmap-map" style="height:520px;border-radius:8px;z-index:1;"></div>
+                    <div class="geo-legend" id="heatmap-legend"></div>
                 </div>
                 <div class="widget span-2">
                     <div class="widget-header">
                         <div>
-                            <div class="widget-title">Detalhamento por Estado</div>
+                            <div class="widget-title">Dados por Municipio</div>
+                            <div class="widget-subtitle" id="heatmap-table-count">0 municipios</div>
                         </div>
                     </div>
-                    <div class="table-wrapper">
+                    <div class="table-wrapper" style="max-height:400px;overflow-y:auto;">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>UF</th><th>Registros</th><th>Área (ha)</th>
-                                    <th>Prod. Estimada (t)</th><th>Prod. Bruta (t)</th>
-                                    <th>Cultivares</th><th>Municípios</th>
+                                    <th>#</th><th>Municipio</th><th>UF</th>
+                                    <th>Area (ha)</th><th>Producao (t)</th>
+                                    <th>Registros</th><th>Cultivares</th>
                                 </tr>
                             </thead>
-                            <tbody id="tbody-uf-detail"></tbody>
+                            <tbody id="tbody-heatmap-detail"></tbody>
                         </table>
                     </div>
                 </div>

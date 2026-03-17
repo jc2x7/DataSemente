@@ -13,6 +13,9 @@ const App = {
     currentDir: 'asc',
     charts: {},
     heatmapData: null,
+    heatmapMap: null,
+    heatmapLayer: null,
+    heatmapMetric: 'producao',
     filterOptions: null,
     geoMap: null,
     geoLayer: null,
@@ -43,7 +46,10 @@ const App = {
                 document.getElementById('panel-title').textContent = item.textContent.trim();
 
                 if (item.dataset.panel === 'dados') this.searchTable();
-                if (item.dataset.panel === 'mapa') this.loadHeatmap();
+                if (item.dataset.panel === 'mapa') {
+                    this.loadHeatmap();
+                    setTimeout(() => { if (this.heatmapMap) this.heatmapMap.invalidateSize(); }, 200);
+                }
 
                 // Mobile: close sidebar
                 document.getElementById('sidebar').classList.remove('open');
@@ -321,44 +327,160 @@ const App = {
         });
     },
 
-    // ===== HEATMAP =====
+    // ===== HEATMAP (Leaflet por Município) =====
     bindMap() {
-        document.querySelectorAll('.metric-pill').forEach(btn => {
+        document.querySelectorAll('[data-heatmap-metric]').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.metric-pill').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('[data-heatmap-metric]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                if (this.heatmapData) BrazilMap.render('brazil-map-container', this.heatmapData, btn.dataset.metric);
+                this.heatmapMetric = btn.dataset.heatmapMetric;
+                if (this.heatmapData) this.renderHeatmapMarkers();
             });
         });
-        BrazilMap.onStateClick = (uf) => {
-            const select = document.getElementById('filter-uf');
-            Array.from(select.options).forEach(o => { o.selected = o.value === uf; });
-            this.applyFilters();
-        };
+    },
+
+    initHeatmapMap() {
+        if (this.heatmapMap) return;
+        const mapEl = document.getElementById('heatmap-map');
+        if (!mapEl) return;
+
+        this.heatmapMap = L.map('heatmap-map', {
+            center: [-14.5, -51.0],
+            zoom: 4,
+            minZoom: 3,
+            maxZoom: 12,
+            scrollWheelZoom: true,
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd',
+            maxZoom: 19,
+        }).addTo(this.heatmapMap);
+
+        this.heatmapLayer = L.layerGroup().addTo(this.heatmapMap);
     },
 
     async loadHeatmap() {
+        this.initHeatmapMap();
+        if (!this.heatmapMap) return;
+
         try {
             const params = this.getFilterParams();
-            params.set('type', 'heatmap');
-            const res = await fetch('api/stats.php?' + params.toString());
+            const res = await fetch('api/geo.php?' + params.toString());
             const data = await res.json();
             if (!data.success) return;
-            this.heatmapData = data.data;
-            const active = document.querySelector('.metric-pill.active');
-            const metric = active ? active.dataset.metric : 'total_producao';
-            BrazilMap.render('brazil-map-container', data.data, metric);
 
-            const tbody = document.getElementById('tbody-uf-detail');
-            tbody.innerHTML = '';
-            const fmt = n => Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            const fmtI = n => Number(n).toLocaleString('pt-BR');
-            data.data.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${this.esc(row.uf)}</td><td class="num">${fmtI(row.registros)}</td><td class="num">${fmt(row.total_area)}</td><td class="num">${fmt(row.total_producao)}</td><td class="num">${fmt(row.total_producao_bruta)}</td><td class="num">${fmtI(row.total_cultivares)}</td><td class="num">${fmtI(row.total_municipios)}</td>`;
-                tbody.appendChild(tr);
+            this.heatmapData = data.data;
+
+            const subtitle = document.getElementById('heatmap-subtitle');
+            if (subtitle) {
+                const fmtN = n => Number(n).toLocaleString('pt-BR');
+                subtitle.textContent = `${fmtN(data.totalMunicipios)} municipios · ${fmtN(data.totalRegistros)} registros`;
+            }
+
+            this.renderHeatmapMarkers();
+            this.renderHeatmapTable(data.data);
+        } catch (err) { console.error('Erro ao carregar heatmap:', err); }
+    },
+
+    renderHeatmapMarkers() {
+        if (!this.heatmapLayer || !this.heatmapData) return;
+        this.heatmapLayer.clearLayers();
+
+        const items = this.heatmapData;
+        if (!items.length) return;
+
+        const metric = this.heatmapMetric;
+        const values = items.map(d => d[metric]).filter(v => v > 0);
+        if (!values.length) return;
+
+        const maxVal = Math.max(...values);
+        const minVal = Math.min(...values);
+
+        const getColor = (val) => {
+            if (maxVal === minVal) return '#3498db';
+            const ratio = (val - minVal) / (maxVal - minVal);
+            if (ratio < 0.2) return '#3498db';
+            if (ratio < 0.4) return '#2ecc71';
+            if (ratio < 0.6) return '#f1c40f';
+            if (ratio < 0.8) return '#e67e22';
+            return '#e74c3c';
+        };
+
+        const getRadius = (val) => {
+            if (maxVal === minVal) return 8;
+            const ratio = (val - minVal) / (maxVal - minVal);
+            return 4 + ratio * 22;
+        };
+
+        const fmt = n => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+
+        items.forEach(item => {
+            const val = item[metric] || 0;
+            if (val <= 0) return;
+
+            const circle = L.circleMarker([item.lat, item.lng], {
+                radius: getRadius(val),
+                fillColor: getColor(val),
+                color: getColor(val),
+                weight: 1,
+                opacity: 0.8,
+                fillOpacity: 0.55,
             });
-        } catch (err) { console.error(err); }
+
+            circle.bindPopup(
+                `<div style="font-family:Inter,sans-serif;font-size:13px;line-height:1.7;">` +
+                `<strong style="font-size:14px;">${item.municipio}</strong> - ${item.uf}<br>` +
+                `Area: <strong>${fmt(item.area)} ha</strong><br>` +
+                `Producao: <strong>${fmt(item.producao)} t</strong><br>` +
+                `Registros: <strong>${fmt(item.registros)}</strong><br>` +
+                `Cultivares: <strong>${item.cultivares}</strong>` +
+                `</div>`,
+                { closeButton: false, className: 'geo-popup' }
+            );
+
+            circle.bindTooltip(item.municipio, {
+                permanent: false, direction: 'top', offset: [0, -8], className: 'geo-tooltip'
+            });
+
+            this.heatmapLayer.addLayer(circle);
+        });
+
+        // Legenda
+        const legend = document.getElementById('heatmap-legend');
+        if (legend) {
+            const metricLabels = { area: 'Area (ha)', producao: 'Producao (t)', registros: 'Registros' };
+            const fmtShort = (n) => {
+                if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+                if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+                return Math.round(n).toString();
+            };
+            legend.innerHTML = `
+                <span class="geo-legend-title">${metricLabels[metric]}</span>
+                <span class="geo-legend-label">${fmtShort(minVal)}</span>
+                <div class="geo-legend-gradient"></div>
+                <span class="geo-legend-label">${fmtShort(maxVal)}</span>
+            `;
+        }
+    },
+
+    renderHeatmapTable(items) {
+        const tbody = document.getElementById('tbody-heatmap-detail');
+        const countEl = document.getElementById('heatmap-table-count');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const sorted = [...items].sort((a, b) => b.producao - a.producao);
+        const fmt = n => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+        const fmtI = n => Number(n).toLocaleString('pt-BR');
+
+        sorted.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${idx + 1}</td><td>${this.esc(row.municipio)}</td><td>${this.esc(row.uf)}</td><td class="num">${fmt(row.area)}</td><td class="num">${fmt(row.producao)}</td><td class="num">${fmtI(row.registros)}</td><td class="num">${fmtI(row.cultivares)}</td>`;
+            tbody.appendChild(tr);
+        });
+
+        if (countEl) countEl.textContent = `${fmtI(sorted.length)} municipios`;
     },
 
     // ===== GEO MAP (Leaflet) =====
