@@ -1,16 +1,70 @@
 <?php
 /**
  * DataSemente - Painel Admin: Upload de CSV
- * Senha de acesso: definida em $ADMIN_PASSWORD
+ * Processamento em lotes via AJAX para evitar timeout
  */
 
 session_start();
-set_time_limit(300);
+set_time_limit(120);
 ini_set('memory_limit', '512M');
-ini_set('upload_max_filesize', '100M');
-ini_set('post_max_size', '110M');
 
 $ADMIN_PASSWORD = '290212';
+$UPLOAD_DIR = __DIR__ . '/uploads';
+
+// Garante pasta de uploads
+if (!is_dir($UPLOAD_DIR)) {
+    mkdir($UPLOAD_DIR, 0755, true);
+}
+
+// --- API AJAX ---
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json');
+
+    if (empty($_SESSION['admin_auth'])) {
+        echo json_encode(['error' => 'Não autenticado']);
+        exit;
+    }
+
+    require_once __DIR__ . '/../config.php';
+
+    switch ($_GET['action']) {
+
+        // Etapa 1: Upload do arquivo
+        case 'upload':
+            handleUpload($UPLOAD_DIR);
+            break;
+
+        // Etapa 2: Limpar tabela
+        case 'truncate':
+            handleTruncate();
+            break;
+
+        // Etapa 3: Processar lote
+        case 'process':
+            handleProcess($UPLOAD_DIR);
+            break;
+
+        // Etapa 4: Finalizar
+        case 'finish':
+            handleFinish($UPLOAD_DIR);
+            break;
+
+        // Contagem
+        case 'count':
+            try {
+                $pdo = getConnection();
+                $count = $pdo->query('SELECT COUNT(*) FROM dados_campo')->fetchColumn();
+                echo json_encode(['count' => (int)$count]);
+            } catch (Exception $e) {
+                echo json_encode(['count' => 0]);
+            }
+            break;
+
+        default:
+            echo json_encode(['error' => 'Ação inválida']);
+    }
+    exit;
+}
 
 // --- Logout ---
 if (isset($_GET['logout'])) {
@@ -34,26 +88,6 @@ if (empty($_SESSION['admin_auth'])) {
     exit;
 }
 
-// --- Upload + Importação ---
-$msg = '';
-$msgType = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv'])) {
-    $file = $_FILES['csv'];
-
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        $msg = 'Erro no upload: código ' . $file['error'];
-        $msgType = 'error';
-    } elseif (strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) !== 'csv') {
-        $msg = 'Apenas arquivos .csv são aceitos.';
-        $msgType = 'error';
-    } else {
-        $result = importCSV($file['tmp_name']);
-        $msg = $result['message'];
-        $msgType = $result['type'];
-    }
-}
-
 // Contagem de registros
 $totalRegistros = 0;
 try {
@@ -64,31 +98,46 @@ try {
     // banco ainda não configurado
 }
 
-showDashboard($msg, $msgType, $totalRegistros);
+showDashboard($totalRegistros);
 
-// ===================== FUNÇÕES =====================
+// ===================== FUNÇÕES API =====================
 
-function importCSV(string $tmpPath): array
+function handleUpload(string $uploadDir): void
 {
-    try {
-        require_once __DIR__ . '/../config.php';
-        $pdo = getConnection();
-    } catch (Exception $e) {
-        return ['type' => 'error', 'message' => 'Erro de conexão: ' . $e->getMessage()];
+    if (!isset($_FILES['csv']) || $_FILES['csv']['error'] !== UPLOAD_ERR_OK) {
+        $code = isset($_FILES['csv']) ? $_FILES['csv']['error'] : 'no file';
+        echo json_encode(['error' => 'Erro no upload: código ' . $code]);
+        return;
     }
 
-    $handle = fopen($tmpPath, 'r');
-    if (!$handle) {
-        return ['type' => 'error', 'message' => 'Não foi possível ler o arquivo.'];
+    $ext = strtolower(pathinfo($_FILES['csv']['name'], PATHINFO_EXTENSION));
+    if ($ext !== 'csv') {
+        echo json_encode(['error' => 'Apenas arquivos .csv são aceitos.']);
+        return;
     }
 
-    // Detecta delimitador
+    // Salva com nome fixo
+    $dest = $uploadDir . '/import.csv';
+    if (file_exists($dest)) {
+        unlink($dest);
+    }
+
+    move_uploaded_file($_FILES['csv']['tmp_name'], $dest);
+
+    // Conta linhas e detecta cabeçalho
+    $handle = fopen($dest, 'r');
     $firstLine = fgets($handle);
     rewind($handle);
     $delimiter = (substr_count($firstLine, ';') > substr_count($firstLine, ',')) ? ';' : ',';
 
-    // Lê cabeçalho
     $header = fgetcsv($handle, 0, $delimiter);
+    $totalLines = 0;
+    while (fgets($handle) !== false) {
+        $totalLines++;
+    }
+    fclose($handle);
+
+    // Normaliza cabeçalho
     $header = array_map(function ($col) {
         $col = trim($col);
         $col = mb_strtolower($col, 'UTF-8');
@@ -97,21 +146,8 @@ function importCSV(string $tmpPath): array
         return $col;
     }, $header);
 
-    $columnMap = [
-        'safra'             => ['safra', 'ano_safra', 'crop_year'],
-        'especie'           => ['especie', 'especies', 'species', 'cultura', 'crop'],
-        'categoria'         => ['categoria', 'category', 'cat'],
-        'cultivar'          => ['cultivar', 'variedade', 'variety'],
-        'municipio'         => ['municipio', 'cidade', 'city', 'nome_municipio'],
-        'uf'                => ['uf', 'estado', 'state', 'sigla_uf'],
-        'status_registro'   => ['status', 'status_registro', 'situacao'],
-        'data_plantio'      => ['data_do_plantio', 'data_plantio', 'plantio', 'dt_plantio'],
-        'data_colheita'     => ['data_de_colheita', 'data_colheita', 'colheita', 'dt_colheita'],
-        'area'              => ['area', 'area_plantada', 'hectares', 'area_ha'],
-        'producao_bruta'    => ['producao_bruta', 'prod_bruta', 'producao_real'],
-        'producao_estimada' => ['producao_estimada', 'prod_estimada', 'estimativa'],
-    ];
-
+    // Resolve mapeamento
+    $columnMap = getColumnMap();
     $resolvedMap = [];
     foreach ($columnMap as $dbCol => $csvOptions) {
         foreach ($csvOptions as $opt) {
@@ -124,26 +160,84 @@ function importCSV(string $tmpPath): array
     }
 
     if (empty($resolvedMap)) {
-        fclose($handle);
-        return ['type' => 'error', 'message' => 'Nenhuma coluna reconhecida no CSV. Colunas encontradas: ' . implode(', ', $header)];
+        echo json_encode(['error' => 'Nenhuma coluna reconhecida. Colunas encontradas: ' . implode(', ', $header)]);
+        return;
     }
 
+    // Salva metadados na sessão
+    $_SESSION['import_meta'] = [
+        'delimiter'   => $delimiter,
+        'resolvedMap' => $resolvedMap,
+        'totalLines'  => $totalLines,
+    ];
+
+    echo json_encode([
+        'success'    => true,
+        'totalLines' => $totalLines,
+        'columns'    => array_keys($resolvedMap),
+    ]);
+}
+
+function handleTruncate(): void
+{
+    try {
+        $pdo = getConnection();
+        $pdo->exec('DELETE FROM dados_campo');
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Erro ao limpar tabela: ' . $e->getMessage()]);
+    }
+}
+
+function handleProcess(string $uploadDir): void
+{
+    $offset = isset($_POST['offset']) ? (int)$_POST['offset'] : 0;
+    $batchSize = isset($_POST['batch']) ? (int)$_POST['batch'] : 5000;
+
+    if (empty($_SESSION['import_meta'])) {
+        echo json_encode(['error' => 'Metadados não encontrados. Faça upload novamente.']);
+        return;
+    }
+
+    $meta = $_SESSION['import_meta'];
+    $filePath = $uploadDir . '/import.csv';
+
+    if (!file_exists($filePath)) {
+        echo json_encode(['error' => 'Arquivo CSV não encontrado.']);
+        return;
+    }
+
+    try {
+        $pdo = getConnection();
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Erro de conexão: ' . $e->getMessage()]);
+        return;
+    }
+
+    $handle = fopen($filePath, 'r');
+    $delimiter = $meta['delimiter'];
+    $resolvedMap = $meta['resolvedMap'];
+
+    // Pula cabeçalho
+    fgetcsv($handle, 0, $delimiter);
+
+    // Pula até o offset
+    $skipped = 0;
+    while ($skipped < $offset && fgetcsv($handle, 0, $delimiter) !== false) {
+        $skipped++;
+    }
+
+    // Prepara INSERT em lote
     $dbCols = array_keys($resolvedMap);
-    $placeholders = implode(',', array_fill(0, count($dbCols), '?'));
     $colNames = implode(',', $dbCols);
-    $sql = "INSERT INTO dados_campo ($colNames) VALUES ($placeholders)";
-    $stmt = $pdo->prepare($sql);
+    $singlePlaceholder = '(' . implode(',', array_fill(0, count($dbCols), '?')) . ')';
 
-    // Limpa todos os dados anteriores antes de importar
-    $pdo->exec('DELETE FROM dados_campo');
-
-    $totalRows = 0;
+    $rows = [];
+    $allValues = [];
+    $read = 0;
     $errors = 0;
-    $batchSize = 1000;
 
-    $pdo->beginTransaction();
-
-    while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+    while ($read < $batchSize && ($row = fgetcsv($handle, 0, $delimiter)) !== false) {
         $values = [];
         foreach ($resolvedMap as $dbCol => $csvIdx) {
             $val = isset($row[$csvIdx]) ? trim($row[$csvIdx]) : null;
@@ -166,31 +260,79 @@ function importCSV(string $tmpPath): array
             $values[] = $val;
         }
 
-        try {
-            $stmt->execute($values);
-            $totalRows++;
-        } catch (PDOException $e) {
-            $errors++;
-        }
-
-        if ($totalRows % $batchSize === 0) {
-            $pdo->commit();
-            $pdo->beginTransaction();
-        }
+        $rows[] = $singlePlaceholder;
+        $allValues = array_merge($allValues, $values);
+        $read++;
     }
 
-    $pdo->commit();
     fclose($handle);
 
-    $colsMapped = implode(', ', $dbCols);
-    $msgParts = ["Importação concluída! <strong>$totalRows</strong> linhas importadas."];
-    if ($errors > 0) {
-        $msgParts[] = "$errors erros encontrados.";
-    }
-    $msgParts[] = "Colunas mapeadas: $colsMapped";
+    $inserted = 0;
+    if (!empty($rows)) {
+        // Insere em sub-lotes de 500 para não estourar memória
+        $subBatch = 500;
+        $colCount = count($dbCols);
+        for ($i = 0; $i < count($rows); $i += $subBatch) {
+            $chunk = array_slice($rows, $i, $subBatch);
+            $valChunk = array_slice($allValues, $i * $colCount, count($chunk) * $colCount);
 
-    return ['type' => 'success', 'message' => implode('<br>', $msgParts)];
+            $sql = "INSERT INTO dados_campo ($colNames) VALUES " . implode(',', $chunk);
+            try {
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($valChunk);
+                $inserted += count($chunk);
+            } catch (PDOException $e) {
+                $errors += count($chunk);
+            }
+        }
+    }
+
+    echo json_encode([
+        'success'  => true,
+        'read'     => $read,
+        'inserted' => $inserted,
+        'errors'   => $errors,
+        'nextOffset' => $offset + $read,
+        'done'     => $read < $batchSize,
+    ]);
 }
+
+function handleFinish(string $uploadDir): void
+{
+    $filePath = $uploadDir . '/import.csv';
+    if (file_exists($filePath)) {
+        unlink($filePath);
+    }
+    unset($_SESSION['import_meta']);
+
+    try {
+        $pdo = getConnection();
+        $count = $pdo->query('SELECT COUNT(*) FROM dados_campo')->fetchColumn();
+        echo json_encode(['success' => true, 'totalRecords' => (int)$count]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => true, 'totalRecords' => 0]);
+    }
+}
+
+function getColumnMap(): array
+{
+    return [
+        'safra'             => ['safra', 'ano_safra', 'crop_year'],
+        'especie'           => ['especie', 'especies', 'species', 'cultura', 'crop'],
+        'categoria'         => ['categoria', 'category', 'cat'],
+        'cultivar'          => ['cultivar', 'variedade', 'variety'],
+        'municipio'         => ['municipio', 'cidade', 'city', 'nome_municipio'],
+        'uf'                => ['uf', 'estado', 'state', 'sigla_uf'],
+        'status_registro'   => ['status', 'status_registro', 'situacao'],
+        'data_plantio'      => ['data_do_plantio', 'data_plantio', 'plantio', 'dt_plantio'],
+        'data_colheita'     => ['data_de_colheita', 'data_colheita', 'colheita', 'dt_colheita'],
+        'area'              => ['area', 'area_plantada', 'hectares', 'area_ha'],
+        'producao_bruta'    => ['producao_bruta', 'prod_bruta', 'producao_real'],
+        'producao_estimada' => ['producao_estimada', 'prod_estimada', 'estimativa'],
+    ];
+}
+
+// ===================== VIEWS =====================
 
 function showLogin(string $error): void
 {
@@ -228,7 +370,7 @@ function showLogin(string $error): void
 <?php
 }
 
-function showDashboard(string $msg, string $msgType, int $total): void
+function showDashboard(int $total): void
 {
 ?>
 <!DOCTYPE html>
@@ -261,12 +403,15 @@ function showDashboard(string $msg, string $msgType, int $total): void
         .btn { display: block; width: 100%; padding: 14px; background: #6c5ce7; color: white; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.15s; }
         .btn:hover { background: #5a4bd1; }
         .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .msg { padding: 14px 18px; border-radius: 10px; font-size: 0.85rem; line-height: 1.6; margin-bottom: 20px; }
+        .msg { padding: 14px 18px; border-radius: 10px; font-size: 0.85rem; line-height: 1.6; margin-bottom: 20px; display: none; }
         .msg.success { background: rgba(0,184,148,0.12); border: 1px solid rgba(0,184,148,0.3); color: #00b894; }
         .msg.error { background: rgba(225,112,85,0.12); border: 1px solid rgba(225,112,85,0.3); color: #e17055; }
         .hint { font-size: 0.75rem; color: #5a5b75; margin-top: 14px; line-height: 1.6; }
-        .progress-bar { display: none; height: 6px; background: #2d2d44; border-radius: 3px; margin-bottom: 16px; overflow: hidden; }
-        .progress-bar .fill { height: 100%; width: 0%; background: #6c5ce7; border-radius: 3px; transition: width 0.3s; }
+        .progress-area { display: none; margin-bottom: 16px; }
+        .progress-bar { height: 8px; background: #2d2d44; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+        .progress-bar .fill { height: 100%; width: 0%; background: linear-gradient(90deg, #6c5ce7, #a29bfe); border-radius: 4px; transition: width 0.3s; }
+        .progress-text { font-size: 0.78rem; color: #8b8ca7; text-align: center; }
+        .progress-text .pct { color: #a29bfe; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -277,27 +422,26 @@ function showDashboard(string $msg, string $msgType, int $total): void
         </div>
 
         <div class="stat-card">
-            <div class="stat-value"><?= number_format($total, 0, ',', '.') ?></div>
+            <div class="stat-value" id="stat-value"><?= number_format($total, 0, ',', '.') ?></div>
             <div class="stat-label">Registros no banco</div>
         </div>
 
-        <?php if ($msg): ?>
-            <div class="msg <?= $msgType ?>"><?= $msg ?></div>
-        <?php endif; ?>
+        <div class="msg" id="msg"></div>
 
         <div class="upload-card">
             <h2>Importar CSV</h2>
-            <form method="POST" enctype="multipart/form-data" id="upload-form">
-                <div class="drop-zone" id="drop-zone">
-                    <input type="file" name="csv" accept=".csv" id="csv-input" required>
-                    <div class="icon">&#128196;</div>
-                    <div class="label">Clique ou arraste o arquivo CSV</div>
-                    <div class="sublabel">Tamanho máximo: 100MB</div>
-                </div>
-                <div class="file-name" id="file-name"></div>
-                <div class="progress-bar" id="progress-bar"><div class="fill" id="progress-fill"></div></div>
-                <button type="submit" class="btn" id="btn-submit" disabled>Enviar e Importar</button>
-            </form>
+            <div class="drop-zone" id="drop-zone">
+                <input type="file" accept=".csv" id="csv-input">
+                <div class="icon">&#128196;</div>
+                <div class="label">Clique ou arraste o arquivo CSV</div>
+                <div class="sublabel">Tamanho máximo: 100MB</div>
+            </div>
+            <div class="file-name" id="file-name"></div>
+            <div class="progress-area" id="progress-area">
+                <div class="progress-bar"><div class="fill" id="progress-fill"></div></div>
+                <div class="progress-text" id="progress-text">Preparando...</div>
+            </div>
+            <button class="btn" id="btn-submit" disabled>Enviar e Importar</button>
             <div class="hint">
                 O sistema detecta automaticamente as colunas do CSV (separador <strong>;</strong> ou <strong>,</strong>).<br>
                 Colunas aceitas: safra, especie, categoria, cultivar, municipio, uf, status, area, producao_bruta, producao_estimada, data_plantio, data_colheita.
@@ -308,18 +452,23 @@ function showDashboard(string $msg, string $msgType, int $total): void
     <script>
     const dropZone = document.getElementById('drop-zone');
     const csvInput = document.getElementById('csv-input');
-    const fileName = document.getElementById('file-name');
+    const fileNameEl = document.getElementById('file-name');
     const btnSubmit = document.getElementById('btn-submit');
-    const form = document.getElementById('upload-form');
-    const progressBar = document.getElementById('progress-bar');
+    const progressArea = document.getElementById('progress-area');
     const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const msgEl = document.getElementById('msg');
+    const statValue = document.getElementById('stat-value');
+
+    const BATCH_SIZE = 5000;
 
     csvInput.addEventListener('change', () => {
         if (csvInput.files.length) {
             const f = csvInput.files[0];
-            fileName.textContent = f.name + ' (' + (f.size / 1024 / 1024).toFixed(1) + ' MB)';
-            fileName.style.display = 'block';
+            fileNameEl.textContent = f.name + ' (' + (f.size / 1024 / 1024).toFixed(1) + ' MB)';
+            fileNameEl.style.display = 'block';
             btnSubmit.disabled = false;
+            hideMsg();
         }
     });
 
@@ -330,12 +479,108 @@ function showDashboard(string $msg, string $msgType, int $total): void
         dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
     });
 
-    form.addEventListener('submit', () => {
+    btnSubmit.addEventListener('click', startImport);
+
+    async function startImport() {
+        const file = csvInput.files[0];
+        if (!file) return;
+
         btnSubmit.disabled = true;
-        btnSubmit.textContent = 'Importando... aguarde';
-        progressBar.style.display = 'block';
-        progressFill.style.width = '80%';
-    });
+        dropZone.style.display = 'none';
+        fileNameEl.style.display = 'none';
+        progressArea.style.display = 'block';
+        hideMsg();
+
+        try {
+            // Etapa 1: Upload
+            setProgress(0, 'Enviando arquivo...');
+            const formData = new FormData();
+            formData.append('csv', file);
+
+            const uploadRes = await fetch('?action=upload', { method: 'POST', body: formData });
+            const uploadData = await uploadRes.json();
+
+            if (uploadData.error) throw new Error(uploadData.error);
+
+            const totalLines = uploadData.totalLines;
+            const columns = uploadData.columns.join(', ');
+
+            // Etapa 2: Limpar dados anteriores
+            setProgress(5, 'Limpando dados anteriores...');
+            const truncRes = await fetch('?action=truncate', { method: 'POST' });
+            const truncData = await truncRes.json();
+            if (truncData.error) throw new Error(truncData.error);
+
+            // Etapa 3: Processar em lotes
+            let offset = 0;
+            let totalInserted = 0;
+            let totalErrors = 0;
+
+            while (true) {
+                const pct = Math.round(10 + (offset / totalLines) * 85);
+                setProgress(pct, `Importando... ${formatNum(offset)} / ${formatNum(totalLines)} linhas`);
+
+                const batchForm = new FormData();
+                batchForm.append('offset', offset);
+                batchForm.append('batch', BATCH_SIZE);
+
+                const batchRes = await fetch('?action=process', { method: 'POST', body: batchForm });
+                const batchData = await batchRes.json();
+
+                if (batchData.error) throw new Error(batchData.error);
+
+                totalInserted += batchData.inserted;
+                totalErrors += batchData.errors;
+                offset = batchData.nextOffset;
+
+                if (batchData.done) break;
+            }
+
+            // Etapa 4: Finalizar
+            setProgress(98, 'Finalizando...');
+            const finishRes = await fetch('?action=finish', { method: 'POST' });
+            const finishData = await finishRes.json();
+
+            setProgress(100, 'Concluído!');
+
+            // Atualiza contador
+            statValue.textContent = formatNum(finishData.totalRecords || totalInserted);
+
+            let msg = `Importação concluída! <strong>${formatNum(totalInserted)}</strong> linhas importadas.`;
+            if (totalErrors > 0) msg += `<br>${formatNum(totalErrors)} erros encontrados.`;
+            msg += `<br>Colunas mapeadas: ${columns}`;
+            showMsg('success', msg);
+
+        } catch (err) {
+            showMsg('error', err.message);
+        }
+
+        // Reset UI
+        progressArea.style.display = 'none';
+        dropZone.style.display = '';
+        btnSubmit.disabled = false;
+        csvInput.value = '';
+        fileNameEl.style.display = 'none';
+    }
+
+    function setProgress(pct, text) {
+        progressFill.style.width = pct + '%';
+        progressText.innerHTML = text + ' <span class="pct">' + pct + '%</span>';
+    }
+
+    function showMsg(type, html) {
+        msgEl.className = 'msg ' + type;
+        msgEl.innerHTML = html;
+        msgEl.style.display = 'block';
+    }
+
+    function hideMsg() {
+        msgEl.style.display = 'none';
+    }
+
+    function formatNum(n) {
+        return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
     </script>
 </body>
 </html>
