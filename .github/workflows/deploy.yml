@@ -3,7 +3,7 @@ name: Deploy para FTP
 on:
   push:
     branches:
-      - main
+      - claude/seed-data-web-app-wCDvk
 
 jobs:
   deploy:
