@@ -247,131 +247,116 @@
             </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="tab-bar">
-            <button class="tab active" data-tab="visao-geral">Visao Geral</button>
-            <button class="tab" data-tab="mapa">Mapa de Calor</button>
-            <button class="tab" data-tab="dados">Dados Detalhados</button>
-        </div>
-
-        <!-- ===== TAB: VISAO GERAL ===== -->
-        <div class="tab-content active" id="tab-visao-geral">
-            <div class="cards-grid">
-                <!-- Evolucao -->
-                <div class="card span-2">
-                    <div class="card-header">
-                        <div class="card-title">Evolucao por Safra</div>
-                        <div class="card-subtitle">Producao estimada ao longo das safras</div>
-                    </div>
-                    <div class="chart-box" style="height:350px;">
-                        <canvas id="chart-evolucao"></canvas>
-                    </div>
+        <!-- ===== MAPA DE CALOR ===== -->
+        <div class="cards-grid" style="margin-bottom:20px;">
+            <div class="card span-2">
+                <div class="card-header">
+                    <div class="card-title">Mapa de Calor por Municipio</div>
+                    <span class="card-info" id="map-info">Carregando...</span>
                 </div>
-                <!-- Top Estados -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Top 10 Estados</div>
-                        <div class="card-subtitle">Producao estimada (t)</div>
-                    </div>
-                    <div class="chart-box" style="height:320px;">
-                        <canvas id="chart-ranking-uf"></canvas>
-                    </div>
-                </div>
-                <!-- Top Cultivares -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Top 10 Cultivares</div>
-                        <div class="card-subtitle">Producao estimada (t)</div>
-                    </div>
-                    <div class="chart-box" style="height:320px;">
-                        <canvas id="chart-ranking-cultivar"></canvas>
-                    </div>
-                </div>
-                <!-- Top Municipios -->
-                <div class="card span-2">
-                    <div class="card-header">
-                        <div class="card-title">Top 10 Municipios</div>
-                        <div class="card-subtitle">Area plantada (ha)</div>
-                    </div>
-                    <div class="chart-box" style="height:300px;">
-                        <canvas id="chart-ranking-municipio"></canvas>
-                    </div>
+                <div class="map-wrapper">
+                    <div id="map" style="height:520px;border-radius:8px;"></div>
+                    <div class="map-legend" id="map-legend"></div>
                 </div>
             </div>
         </div>
 
-        <!-- ===== TAB: MAPA ===== -->
-        <div class="tab-content" id="tab-mapa">
-            <div class="cards-grid">
-                <div class="card span-2">
-                    <div class="card-header">
-                        <div class="card-title">Mapa de Calor por Municipio</div>
-                        <span class="card-info" id="map-info">Carregando...</span>
-                    </div>
-                    <div class="map-wrapper">
-                        <div id="map" style="height:520px;border-radius:8px;"></div>
-                        <div class="map-legend" id="map-legend"></div>
-                    </div>
+        <!-- ===== GRAFICOS ===== -->
+        <div class="cards-grid" style="margin-bottom:20px;">
+            <div class="card span-2">
+                <div class="card-header">
+                    <div class="card-title">Evolucao por Safra</div>
+                    <div class="card-subtitle">Producao estimada ao longo das safras</div>
                 </div>
-                <div class="card span-2">
-                    <div class="card-header">
-                        <div class="card-title">Dados por Municipio</div>
-                        <span class="card-info" id="map-table-count">0 municipios</span>
-                    </div>
-                    <div class="table-scroll" style="max-height:400px;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Municipio</th>
-                                    <th>UF</th>
-                                    <th>Area (ha)</th>
-                                    <th>Producao (t)</th>
-                                    <th>Registros</th>
-                                    <th>Cultivares</th>
-                                </tr>
-                            </thead>
-                            <tbody id="map-table-body"></tbody>
-                        </table>
-                    </div>
+                <div class="chart-box" style="height:350px;">
+                    <canvas id="chart-evolucao"></canvas>
                 </div>
             </div>
-        </div>
-
-        <!-- ===== TAB: DADOS ===== -->
-        <div class="tab-content" id="tab-dados">
             <div class="card">
                 <div class="card-header">
-                    <div>
-                        <div class="card-title">Registros Detalhados</div>
-                        <div class="card-subtitle" id="table-results-info">Carregando...</div>
-                    </div>
-                    <div class="card-actions">
-                        <input type="text" id="table-search" class="table-search" placeholder="Buscar nos resultados...">
-                    </div>
+                    <div class="card-title">Top 10 Estados</div>
+                    <div class="card-subtitle">Producao estimada (t)</div>
                 </div>
-                <div class="table-scroll">
-                    <table id="data-table">
-                        <thead>
-                            <tr>
-                                <th data-sort="safra">Safra</th>
-                                <th data-sort="especie">Especie</th>
-                                <th data-sort="cultivar">Cultivar</th>
-                                <th data-sort="categoria">Categoria</th>
-                                <th data-sort="municipio">Municipio</th>
-                                <th data-sort="uf">UF</th>
-                                <th data-sort="status_registro">Status</th>
-                                <th data-sort="area">Area (ha)</th>
-                                <th data-sort="producao_estimada">Prod. Est.</th>
-                                <th data-sort="producao_bruta">Prod. Bruta</th>
-                                <th data-sort="data_plantio">Plantio</th>
-                                <th data-sort="data_colheita">Colheita</th>
-                            </tr>
-                        </thead>
-                        <tbody id="data-table-body"></tbody>
-                    </table>
+                <div class="chart-box" style="height:320px;">
+                    <canvas id="chart-ranking-uf"></canvas>
                 </div>
-                <div class="pagination" id="pagination"></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Top 10 Cultivares</div>
+                    <div class="card-subtitle">Producao estimada (t)</div>
+                </div>
+                <div class="chart-box" style="height:320px;">
+                    <canvas id="chart-ranking-cultivar"></canvas>
+                </div>
+            </div>
+            <div class="card span-2">
+                <div class="card-header">
+                    <div class="card-title">Top 10 Municipios</div>
+                    <div class="card-subtitle">Area plantada (ha)</div>
+                </div>
+                <div class="chart-box" style="height:300px;">
+                    <canvas id="chart-ranking-municipio"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TABELA DE DADOS ===== -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Registros Detalhados</div>
+                    <div class="card-subtitle" id="table-results-info">Carregando...</div>
+                </div>
+                <div class="card-actions">
+                    <input type="text" id="table-search" class="table-search" placeholder="Buscar nos resultados...">
+                </div>
+            </div>
+            <div class="table-scroll">
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="safra">Safra</th>
+                            <th data-sort="especie">Especie</th>
+                            <th data-sort="cultivar">Cultivar</th>
+                            <th data-sort="categoria">Categoria</th>
+                            <th data-sort="municipio">Municipio</th>
+                            <th data-sort="uf">UF</th>
+                            <th data-sort="status_registro">Status</th>
+                            <th data-sort="area">Area (ha)</th>
+                            <th data-sort="producao_estimada">Prod. Est.</th>
+                            <th data-sort="producao_bruta">Prod. Bruta</th>
+                            <th data-sort="data_plantio">Plantio</th>
+                            <th data-sort="data_colheita">Colheita</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table-body"></tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- ===== TABELA POR MUNICIPIO ===== -->
+        <div class="card" style="margin-top:20px;">
+            <div class="card-header">
+                <div class="card-title">Dados por Municipio</div>
+                <span class="card-info" id="map-table-count">0 municipios</span>
+            </div>
+            <div class="table-scroll" style="max-height:400px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Municipio</th>
+                            <th>UF</th>
+                            <th>Area (ha)</th>
+                            <th>Producao (t)</th>
+                            <th>Registros</th>
+                            <th>Cultivares</th>
+                        </tr>
+                    </thead>
+                    <tbody id="map-table-body"></tbody>
+                </table>
             </div>
         </div>
 

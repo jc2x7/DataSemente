@@ -24,7 +24,6 @@ const App = {
 
     // ==================== INIT ====================
     async init() {
-        this.bindTabs();
         this.bindMetricButtons();
         this.bindHamburger();
         this.bindTableSort();
@@ -37,25 +36,6 @@ const App = {
 
         this.initialized = true;
         document.getElementById('loading-overlay').classList.add('hidden');
-    },
-
-    // ==================== TABS ====================
-    bindTabs() {
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-                tab.classList.add('active');
-                const target = document.getElementById('tab-' + tab.dataset.tab);
-                if (target) target.classList.add('active');
-
-                if (tab.dataset.tab === 'mapa') {
-                    this.loadMap();
-                    setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 200);
-                }
-                if (tab.dataset.tab === 'dados') this.loadTable();
-            });
-        });
     },
 
     // ==================== METRIC BUTTONS ====================
@@ -269,8 +249,8 @@ const App = {
         await Promise.all([
             this.loadKPIs(),
             this.loadCharts(),
-            this.loadMapIfActive(),
-            this.loadTableIfActive(),
+            this.loadMap(),
+            this.loadTable(),
         ]);
     },
 
@@ -463,13 +443,6 @@ const App = {
     },
 
     // ==================== MAP ====================
-    async loadMapIfActive() {
-        const tabMapa = document.querySelector('.tab[data-tab="mapa"]');
-        if (tabMapa && tabMapa.classList.contains('active')) {
-            await this.loadMap();
-        }
-    },
-
     initMap() {
         if (this.map) return;
         const mapEl = document.getElementById('map');
@@ -653,13 +626,6 @@ const App = {
             arrow.className = 'sort-arrow';
             arrow.textContent = this.tableSortDir === 'asc' ? ' \u2191' : ' \u2193';
             active.appendChild(arrow);
-        }
-    },
-
-    async loadTableIfActive() {
-        const tabDados = document.querySelector('.tab[data-tab="dados"]');
-        if (tabDados && tabDados.classList.contains('active')) {
-            await this.loadTable();
         }
     },
 
