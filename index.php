@@ -3,333 +3,383 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DataSemente - Painel Gerencial</title>
+    <title>DataSemente - Painel Gerencial de Sementes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
-<button class="hamburger" id="hamburger-btn">&#9776;</button>
+<!-- Loading overlay -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Carregando dados...</div>
+</div>
 
 <div class="app-layout">
 
-    <!-- SIDEBAR -->
+    <!-- ==================== SIDEBAR ==================== -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <h1>DataSemente</h1>
-            <span>Painel Gerencial</span>
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 6 4 10 4 14a8 8 0 1016 0c0-4-4-8-8-12z"/><path d="M12 22v-8"/><path d="M8 18c0-2.5 1.8-4 4-4s4 1.5 4 4"/></svg>
+            </div>
+            <div>
+                <div class="brand-name">DataSemente</div>
+                <div class="brand-sub">Painel Gerencial</div>
+            </div>
         </div>
-        <nav class="sidebar-nav">
-            <button class="nav-item active" data-panel="dashboard">
-                <span class="nav-icon">&#9635;</span> Dashboard
-            </button>
-            <button class="nav-item" data-panel="mapa">
-                <span class="nav-icon">&#9737;</span> Mapa de Calor
-            </button>
-            <button class="nav-item" data-panel="comparativo">
-                <span class="nav-icon">&#8700;</span> Comparativo
-            </button>
-            <button class="nav-item" data-panel="dados">
-                <span class="nav-icon">&#9783;</span> Dados
-            </button>
-        </nav>
+
+        <div class="sidebar-scroll">
+            <!-- Metrica do mapa -->
+            <div class="sidebar-section">Metrica do mapa</div>
+            <div class="metric-group">
+                <button class="metric-btn active" data-metric="producao">
+                    <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 14V8h2v6H3zM7 14V5h2v9H7zM11 14V2h2v12h-2z"/></svg>
+                    Producao (t)
+                </button>
+                <button class="metric-btn" data-metric="area">
+                    <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 10l4-4 3 3 5-5"/></svg>
+                    Area (ha)
+                </button>
+                <button class="metric-btn" data-metric="registros">
+                    <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 6h6M5 8h6M5 10h4"/></svg>
+                    Registros
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="sidebar-section">Filtros</div>
+
+            <!-- Safra -->
+            <div class="filter-group">
+                <div class="filter-label">Safra</div>
+                <div class="multi-select" data-filter="safra">
+                    <div class="multi-select-trigger" tabindex="0">
+                        <span class="trigger-text">Todas as safras</span>
+                        <svg class="trigger-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+                    </div>
+                    <div class="multi-select-dropdown">
+                        <div class="dropdown-search"><input type="text" placeholder="Buscar safra..."></div>
+                        <div class="dropdown-actions">
+                            <button class="select-all">Todos</button>
+                            <button class="select-none">Nenhum</button>
+                        </div>
+                        <div class="dropdown-options"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Especie -->
+            <div class="filter-group">
+                <div class="filter-label">Especie</div>
+                <div class="multi-select" data-filter="especie">
+                    <div class="multi-select-trigger" tabindex="0">
+                        <span class="trigger-text">Todas as especies</span>
+                        <svg class="trigger-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+                    </div>
+                    <div class="multi-select-dropdown">
+                        <div class="dropdown-search"><input type="text" placeholder="Buscar especie..."></div>
+                        <div class="dropdown-actions">
+                            <button class="select-all">Todos</button>
+                            <button class="select-none">Nenhum</button>
+                        </div>
+                        <div class="dropdown-options"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cultivar -->
+            <div class="filter-group">
+                <div class="filter-label">Cultivar</div>
+                <div class="multi-select" data-filter="cultivar">
+                    <div class="multi-select-trigger" tabindex="0">
+                        <span class="trigger-text">Todas as cultivares</span>
+                        <svg class="trigger-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+                    </div>
+                    <div class="multi-select-dropdown">
+                        <div class="dropdown-search"><input type="text" placeholder="Buscar cultivar..."></div>
+                        <div class="dropdown-actions">
+                            <button class="select-all">Todos</button>
+                            <button class="select-none">Nenhum</button>
+                        </div>
+                        <div class="dropdown-options"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categoria -->
+            <div class="filter-group">
+                <div class="filter-label">Categoria</div>
+                <div class="multi-select" data-filter="categoria">
+                    <div class="multi-select-trigger" tabindex="0">
+                        <span class="trigger-text">Todas as categorias</span>
+                        <svg class="trigger-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+                    </div>
+                    <div class="multi-select-dropdown">
+                        <div class="dropdown-search"><input type="text" placeholder="Buscar categoria..."></div>
+                        <div class="dropdown-actions">
+                            <button class="select-all">Todos</button>
+                            <button class="select-none">Nenhum</button>
+                        </div>
+                        <div class="dropdown-options"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado -->
+            <div class="filter-group">
+                <div class="filter-label">Estado (UF)</div>
+                <div class="multi-select" data-filter="uf">
+                    <div class="multi-select-trigger" tabindex="0">
+                        <span class="trigger-text">Todos os estados</span>
+                        <svg class="trigger-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+                    </div>
+                    <div class="multi-select-dropdown">
+                        <div class="dropdown-search"><input type="text" placeholder="Buscar estado..."></div>
+                        <div class="dropdown-actions">
+                            <button class="select-all">Todos</button>
+                            <button class="select-none">Nenhum</button>
+                        </div>
+                        <div class="dropdown-options"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="filter-group">
+                <div class="filter-label">Status</div>
+                <div class="multi-select" data-filter="status">
+                    <div class="multi-select-trigger" tabindex="0">
+                        <span class="trigger-text">Todos os status</span>
+                        <svg class="trigger-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+                    </div>
+                    <div class="multi-select-dropdown">
+                        <div class="dropdown-search"><input type="text" placeholder="Buscar status..."></div>
+                        <div class="dropdown-actions">
+                            <button class="select-all">Todos</button>
+                            <button class="select-none">Nenhum</button>
+                        </div>
+                        <div class="dropdown-options"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acoes -->
+        <div class="sidebar-actions">
+            <button id="btn-apply" class="btn-apply">Aplicar Filtros</button>
+            <button id="btn-clear" class="btn-clear">Limpar</button>
+        </div>
+
+        <!-- Footer -->
         <div class="sidebar-footer">
-            <button class="btn btn-accent btn-sm" id="btn-pdf" style="flex:1;">PDF</button>
-            <button class="btn btn-ghost btn-sm" id="btn-export-csv" style="flex:1;">CSV</button>
+            <button id="btn-export-csv" class="btn-export">Exportar CSV</button>
         </div>
     </aside>
 
-    <!-- MAIN -->
-    <div class="main-content">
+    <!-- ==================== MAIN ==================== -->
+    <main class="main-content">
 
-        <!-- TOP BAR -->
-        <div class="topbar">
-            <div class="topbar-title">
-                <h2 id="panel-title">Dashboard</h2>
-                <p>Dados de campo e produção de sementes do Brasil</p>
+        <!-- Mobile hamburger -->
+        <button class="hamburger" id="hamburger-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+
+        <!-- Top bar -->
+        <div class="top-bar">
+            <div>
+                <h1 class="page-title">Painel Gerencial de Sementes</h1>
+                <p class="page-subtitle">Analise de campo, producao e desempenho por regiao</p>
+            </div>
+            <div class="top-bar-right">
+                <div class="active-filters" id="active-filters"></div>
             </div>
         </div>
 
-        <!-- KPIs -->
-        <div class="kpi-grid">
+        <!-- KPI Row -->
+        <div class="kpi-row">
             <div class="kpi-card">
-                <div class="kpi-value" id="stat-registros">-</div>
-                <div class="kpi-label">Registros</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="stat-especies">-</div>
-                <div class="kpi-label">Espécies</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="stat-cultivares">-</div>
-                <div class="kpi-label">Cultivares</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="stat-estados">-</div>
-                <div class="kpi-label">Estados</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="stat-municipios">-</div>
-                <div class="kpi-label">Municípios</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="stat-area">-</div>
-                <div class="kpi-label">Área Total (ha)</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="stat-producao">-</div>
-                <div class="kpi-label">Produção (t)</div>
-            </div>
-        </div>
-
-        <!-- FILTERS -->
-        <div class="filter-bar" id="filter-bar">
-            <div class="filter-bar-header">
-                <h3>Filtros</h3>
-                <button class="filter-toggle" id="filter-toggle">Ocultar</button>
-            </div>
-            <div id="filter-body">
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <label for="filter-busca">Busca geral</label>
-                        <input type="text" id="filter-busca" placeholder="Buscar...">
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-safra">Safra(s)</label>
-                        <select id="filter-safra" multiple></select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-especie">Espécie</label>
-                        <select id="filter-especie">
-                            <option value="">Todas</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-cultivar">Cultivar</label>
-                        <select id="filter-cultivar">
-                            <option value="">Todas (selecione espécie)</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-categoria">Categoria</label>
-                        <select id="filter-categoria">
-                            <option value="">Todas</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-uf">Estado(s)</label>
-                        <select id="filter-uf" multiple></select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-municipio">Município</label>
-                        <input type="text" id="filter-municipio" placeholder="Nome...">
-                    </div>
-                    <div class="filter-group">
-                        <label for="filter-status">Status</label>
-                        <select id="filter-status">
-                            <option value="">Todos</option>
-                        </select>
-                    </div>
+                <div class="kpi-icon blue"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 8h6M7 10h6M7 12h4"/></svg></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Registros</div>
+                    <div class="kpi-value" id="kpi-registros">-</div>
                 </div>
-                <div class="filter-actions">
-                    <button class="btn btn-accent" id="btn-apply">Aplicar</button>
-                    <button class="btn btn-ghost" id="btn-clear">Limpar</button>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon green"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2C6 6 2 10 2 14a8 8 0 1016 0c0-4-4-8-8-12z"/></svg></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Especies</div>
+                    <div class="kpi-value" id="kpi-especies">-</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon purple"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2v16M6 4c0 3 4 4 4 8M14 4c0 3-4 4-4 8"/></svg></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Cultivares</div>
+                    <div class="kpi-value" id="kpi-cultivares">-</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon orange"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="16" height="16" rx="2"/><path d="M2 14l5-5 3 3 7-7"/></svg></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Area Total</div>
+                    <div class="kpi-value" id="kpi-area">-</div>
+                    <div class="kpi-unit">hectares</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon red"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16V10h3v6H4zM9 16V6h3v10H9zM14 16V2h3v14h-3z"/></svg></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Producao Estimada</div>
+                    <div class="kpi-value" id="kpi-producao">-</div>
+                    <div class="kpi-unit">toneladas</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon cyan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 1.5a5.5 5.5 0 00-5.5 5.5c0 4 5.5 11 5.5 11s5.5-7 5.5-11A5.5 5.5 0 0010 1.5z"/><circle cx="10" cy="7" r="2"/></svg></div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Municipios</div>
+                    <div class="kpi-value" id="kpi-municipios">-</div>
                 </div>
             </div>
         </div>
 
-        <!-- ===== PANEL: DASHBOARD ===== -->
-        <div class="panel active" id="panel-dashboard">
-            <div class="dash-grid">
-                <div class="widget span-2 geo-map-widget">
-                    <div class="widget-header">
-                        <div>
-                            <div class="widget-title">Geolocalização de Plantio</div>
-                            <div class="widget-subtitle" id="geo-map-subtitle">Carregando...</div>
-                        </div>
-                        <div class="metric-pills">
-                            <button class="metric-pill active" data-geo-metric="area">Área (ha)</button>
-                            <button class="metric-pill" data-geo-metric="producao">Produção (t)</button>
-                            <button class="metric-pill" data-geo-metric="registros">Registros</button>
-                        </div>
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <button class="tab active" data-tab="visao-geral">Visao Geral</button>
+            <button class="tab" data-tab="mapa">Mapa de Calor</button>
+            <button class="tab" data-tab="dados">Dados Detalhados</button>
+        </div>
+
+        <!-- ===== TAB: VISAO GERAL ===== -->
+        <div class="tab-content active" id="tab-visao-geral">
+            <div class="cards-grid">
+                <!-- Evolucao -->
+                <div class="card span-2">
+                    <div class="card-header">
+                        <div class="card-title">Evolucao por Safra</div>
+                        <div class="card-subtitle">Producao estimada ao longo das safras</div>
                     </div>
-                    <div id="geo-map" style="height:520px;border-radius:8px;z-index:1;"></div>
-                    <div class="geo-legend" id="geo-legend"></div>
-                </div>
-                <div class="widget span-2">
-                    <div class="widget-header">
-                        <div>
-                            <div class="widget-title">Evolução por Safra</div>
-                            <div class="widget-subtitle">Produção estimada ao longo das safras</div>
-                        </div>
-                    </div>
-                    <div class="chart-container-lg">
+                    <div class="chart-box" style="height:350px;">
                         <canvas id="chart-evolucao"></canvas>
                     </div>
                 </div>
-                <div class="widget">
-                    <div class="widget-header">
-                        <div>
-                            <div class="widget-title">Top 10 Estados</div>
-                            <div class="widget-subtitle">Produção estimada (t)</div>
-                        </div>
+                <!-- Top Estados -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Top 10 Estados</div>
+                        <div class="card-subtitle">Producao estimada (t)</div>
                     </div>
-                    <div class="chart-container">
+                    <div class="chart-box" style="height:320px;">
                         <canvas id="chart-ranking-uf"></canvas>
                     </div>
                 </div>
-                <div class="widget">
-                    <div class="widget-header">
-                        <div>
-                            <div class="widget-title">Top 10 Cultivares</div>
-                            <div class="widget-subtitle">Produção estimada (t)</div>
-                        </div>
+                <!-- Top Cultivares -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Top 10 Cultivares</div>
+                        <div class="card-subtitle">Producao estimada (t)</div>
                     </div>
-                    <div class="chart-container">
+                    <div class="chart-box" style="height:320px;">
                         <canvas id="chart-ranking-cultivar"></canvas>
                     </div>
                 </div>
-                <div class="widget span-2">
-                    <div class="widget-header">
-                        <div>
-                            <div class="widget-title">Top 10 Municípios</div>
-                            <div class="widget-subtitle">Área plantada (ha)</div>
-                        </div>
+                <!-- Top Municipios -->
+                <div class="card span-2">
+                    <div class="card-header">
+                        <div class="card-title">Top 10 Municipios</div>
+                        <div class="card-subtitle">Area plantada (ha)</div>
                     </div>
-                    <div class="chart-container">
+                    <div class="chart-box" style="height:300px;">
                         <canvas id="chart-ranking-municipio"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ===== PANEL: MAPA ===== -->
-        <div class="panel" id="panel-mapa">
-            <div class="dash-grid">
-                <div class="widget span-2">
-                    <div class="widget-header">
-                        <div>
-                            <div class="widget-title">Mapa de Calor por Municipio</div>
-                            <div class="widget-subtitle" id="heatmap-subtitle">Carregando...</div>
-                        </div>
-                        <div class="metric-pills">
-                            <button class="metric-pill active" data-heatmap-metric="producao">Producao (t)</button>
-                            <button class="metric-pill" data-heatmap-metric="area">Area (ha)</button>
-                            <button class="metric-pill" data-heatmap-metric="registros">Registros</button>
-                        </div>
+        <!-- ===== TAB: MAPA ===== -->
+        <div class="tab-content" id="tab-mapa">
+            <div class="cards-grid">
+                <div class="card span-2">
+                    <div class="card-header">
+                        <div class="card-title">Mapa de Calor por Municipio</div>
+                        <span class="card-info" id="map-info">Carregando...</span>
                     </div>
-                    <div id="heatmap-map" style="height:520px;border-radius:8px;z-index:1;"></div>
-                    <div class="geo-legend" id="heatmap-legend"></div>
+                    <div class="map-wrapper">
+                        <div id="map" style="height:520px;border-radius:8px;"></div>
+                        <div class="map-legend" id="map-legend"></div>
+                    </div>
                 </div>
-                <div class="widget span-2">
-                    <div class="widget-header">
-                        <div>
-                            <div class="widget-title">Dados por Municipio</div>
-                            <div class="widget-subtitle" id="heatmap-table-count">0 municipios</div>
-                        </div>
+                <div class="card span-2">
+                    <div class="card-header">
+                        <div class="card-title">Dados por Municipio</div>
+                        <span class="card-info" id="map-table-count">0 municipios</span>
                     </div>
-                    <div class="table-wrapper" style="max-height:400px;overflow-y:auto;">
+                    <div class="table-scroll" style="max-height:400px;">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>#</th><th>Municipio</th><th>UF</th>
-                                    <th>Area (ha)</th><th>Producao (t)</th>
-                                    <th>Registros</th><th>Cultivares</th>
+                                    <th>#</th>
+                                    <th>Municipio</th>
+                                    <th>UF</th>
+                                    <th>Area (ha)</th>
+                                    <th>Producao (t)</th>
+                                    <th>Registros</th>
+                                    <th>Cultivares</th>
                                 </tr>
                             </thead>
-                            <tbody id="tbody-heatmap-detail"></tbody>
+                            <tbody id="map-table-body"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ===== PANEL: COMPARATIVO ===== -->
-        <div class="panel" id="panel-comparativo">
-            <div class="widget">
-                <div class="widget-header">
-                    <div class="widget-title">Selecione o que comparar</div>
-                </div>
-                <div class="filters-grid" style="grid-template-columns: 1fr 1fr auto;">
-                    <div class="filter-group">
-                        <label for="compare-type">Tipo</label>
-                        <select id="compare-type">
-                            <option value="safra">Safra x Safra</option>
-                            <option value="cultivar">Cultivar x Cultivar</option>
-                            <option value="uf_evolucao">Evolução por Estado</option>
-                            <option value="cultivar_evolucao">Evolução por Cultivar</option>
-                        </select>
+        <!-- ===== TAB: DADOS ===== -->
+        <div class="tab-content" id="tab-dados">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Registros Detalhados</div>
+                        <div class="card-subtitle" id="table-results-info">Carregando...</div>
                     </div>
-                    <div class="filter-group">
-                        <label for="compare-items">Itens (Ctrl+click)</label>
-                        <select id="compare-items" multiple style="height:110px;"></select>
-                    </div>
-                    <div class="filter-group" style="display:flex;align-items:flex-end;">
-                        <button class="btn btn-accent" id="btn-compare">Comparar</button>
+                    <div class="card-actions">
+                        <input type="text" id="table-search" class="table-search" placeholder="Buscar nos resultados...">
                     </div>
                 </div>
-            </div>
-
-            <div id="comparison-results" style="display:none;">
-                <div class="comparison-grid" id="compare-cards"></div>
-                <div class="widget">
-                    <div class="widget-header">
-                        <div class="widget-title">Gráfico Comparativo</div>
-                    </div>
-                    <div class="chart-container-lg">
-                        <canvas id="chart-comparativo"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ===== PANEL: DADOS ===== -->
-        <div class="panel" id="panel-dados">
-            <div class="results-info">
-                <span class="results-count" id="results-count">Carregando...</span>
-                <span id="results-page"></span>
-            </div>
-
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
-                <p>Carregando dados...</p>
-            </div>
-
-            <div class="widget" id="table-card" style="display:none;">
-                <div class="table-wrapper">
-                    <table>
+                <div class="table-scroll">
+                    <table id="data-table">
                         <thead>
                             <tr>
-                                <th data-sort="safra">Safra <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="especie">Espécie <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="categoria">Cat. <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="cultivar">Cultivar <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="municipio">Município <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="uf">UF <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="status_registro">Status <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="area">Área (ha) <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="producao_bruta">Prod. Bruta <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="producao_estimada">Prod. Est. <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="data_plantio">Plantio <span class="sort-icon">&#8597;</span></th>
-                                <th data-sort="data_colheita">Colheita <span class="sort-icon">&#8597;</span></th>
+                                <th data-sort="safra">Safra</th>
+                                <th data-sort="especie">Especie</th>
+                                <th data-sort="cultivar">Cultivar</th>
+                                <th data-sort="categoria">Categoria</th>
+                                <th data-sort="municipio">Municipio</th>
+                                <th data-sort="uf">UF</th>
+                                <th data-sort="status_registro">Status</th>
+                                <th data-sort="area">Area (ha)</th>
+                                <th data-sort="producao_estimada">Prod. Est.</th>
+                                <th data-sort="producao_bruta">Prod. Bruta</th>
+                                <th data-sort="data_plantio">Plantio</th>
+                                <th data-sort="data_colheita">Colheita</th>
                             </tr>
                         </thead>
-                        <tbody id="results-body"></tbody>
+                        <tbody id="data-table-body"></tbody>
                     </table>
                 </div>
+                <div class="pagination" id="pagination"></div>
             </div>
-
-            <div class="pagination" id="pagination"></div>
         </div>
 
-    </div>
+    </main>
 </div>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="assets/js/brazil-map.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

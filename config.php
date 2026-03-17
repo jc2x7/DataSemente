@@ -46,13 +46,17 @@ function buildFilters(array $get): array
     }
 
     if (!empty($get['especie'])) {
-        $where[] = 'especie = ?';
-        $params[] = $get['especie'];
+        $especies = is_array($get['especie']) ? $get['especie'] : [$get['especie']];
+        $placeholders = implode(',', array_fill(0, count($especies), '?'));
+        $where[] = "especie IN ($placeholders)";
+        $params = array_merge($params, $especies);
     }
 
     if (!empty($get['categoria'])) {
-        $where[] = 'categoria = ?';
-        $params[] = $get['categoria'];
+        $categorias = is_array($get['categoria']) ? $get['categoria'] : [$get['categoria']];
+        $placeholders = implode(',', array_fill(0, count($categorias), '?'));
+        $where[] = "categoria IN ($placeholders)";
+        $params = array_merge($params, $categorias);
     }
 
     if (!empty($get['cultivar'])) {
@@ -79,8 +83,10 @@ function buildFilters(array $get): array
     }
 
     if (!empty($get['status'])) {
-        $where[] = 'status_registro = ?';
-        $params[] = $get['status'];
+        $statuses = is_array($get['status']) ? $get['status'] : [$get['status']];
+        $placeholders = implode(',', array_fill(0, count($statuses), '?'));
+        $where[] = "status_registro IN ($placeholders)";
+        $params = array_merge($params, $statuses);
     }
 
     if (!empty($get['busca'])) {
