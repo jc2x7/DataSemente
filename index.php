@@ -377,7 +377,7 @@
 
         <!-- Footer -->
         <div style="text-align:center; padding:24px 0 8px; font-size:0.78rem; color:#9ca3af;">
-            Criado por <strong>Julio Lemos</strong>
+            Criado por <a href="https://github.com/juliolemosdf" target="_blank" style="color:#2563eb;text-decoration:none;font-weight:600;">@juliolemosdf</a>
         </div>
 
     </main>
