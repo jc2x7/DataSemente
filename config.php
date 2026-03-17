@@ -4,7 +4,7 @@
  * Altere os valores conforme sua hospedagem Locaweb
  */
 
-define('DB_HOST', 'localhost');
+define('DB_HOST', '127.0.0.1');
 define('DB_NAME', 'datasemente');
 define('DB_USER', 'seu_usuario');
 define('DB_PASS', 'sua_senha');

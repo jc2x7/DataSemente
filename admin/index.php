@@ -134,6 +134,9 @@ function importCSV(string $tmpPath): array
     $sql = "INSERT INTO dados_campo ($colNames) VALUES ($placeholders)";
     $stmt = $pdo->prepare($sql);
 
+    // Limpa todos os dados anteriores antes de importar
+    $pdo->exec('DELETE FROM dados_campo');
+
     $totalRows = 0;
     $errors = 0;
     $batchSize = 1000;
