@@ -140,6 +140,21 @@
         <!-- ===== PANEL: DASHBOARD ===== -->
         <div class="panel active" id="panel-dashboard">
             <div class="dash-grid">
+                <div class="widget span-2 geo-map-widget">
+                    <div class="widget-header">
+                        <div>
+                            <div class="widget-title">Geolocalização de Plantio</div>
+                            <div class="widget-subtitle" id="geo-map-subtitle">Carregando...</div>
+                        </div>
+                        <div class="metric-pills">
+                            <button class="metric-pill active" data-geo-metric="area">Área (ha)</button>
+                            <button class="metric-pill" data-geo-metric="producao">Produção (t)</button>
+                            <button class="metric-pill" data-geo-metric="registros">Registros</button>
+                        </div>
+                    </div>
+                    <div id="geo-map" style="height:520px;border-radius:8px;z-index:1;"></div>
+                    <div class="geo-legend" id="geo-legend"></div>
+                </div>
                 <div class="widget span-2">
                     <div class="widget-header">
                         <div>
@@ -308,6 +323,8 @@
     </div>
 </div>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>

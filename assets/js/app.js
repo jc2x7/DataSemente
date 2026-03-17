@@ -14,12 +14,17 @@ const App = {
     charts: {},
     heatmapData: null,
     filterOptions: null,
+    geoMap: null,
+    geoLayer: null,
+    geoData: null,
+    geoMetric: 'area',
 
     init() {
         this.bindSidebar();
         this.bindFilters();
         this.bindSort();
         this.bindMap();
+        this.bindGeoMap();
         this.bindComparison();
         this.bindPDF();
         this.bindFilterToggle();
@@ -195,6 +200,7 @@ const App = {
     async loadDashboard() {
         const params = this.getFilterParams();
         await Promise.all([
+            this.loadGeoMap(),
             this.loadEvolutionChart(params),
             this.loadRankingChart('chart-ranking-uf', 'uf', 'producao_estimada', params),
             this.loadRankingChart('chart-ranking-cultivar', 'cultivar', 'producao_estimada', params),
@@ -353,6 +359,146 @@ const App = {
                 tbody.appendChild(tr);
             });
         } catch (err) { console.error(err); }
+    },
+
+    // ===== GEO MAP (Leaflet) =====
+    bindGeoMap() {
+        document.querySelectorAll('[data-geo-metric]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-geo-metric]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.geoMetric = btn.dataset.geoMetric;
+                if (this.geoData) this.renderGeoMarkers();
+            });
+        });
+    },
+
+    initGeoMap() {
+        if (this.geoMap) return;
+        const mapEl = document.getElementById('geo-map');
+        if (!mapEl) return;
+
+        this.geoMap = L.map('geo-map', {
+            center: [-14.5, -51.0],
+            zoom: 4,
+            minZoom: 3,
+            maxZoom: 12,
+            scrollWheelZoom: true,
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd',
+            maxZoom: 19,
+        }).addTo(this.geoMap);
+
+        this.geoLayer = L.layerGroup().addTo(this.geoMap);
+    },
+
+    async loadGeoMap() {
+        this.initGeoMap();
+        if (!this.geoMap) return;
+
+        try {
+            const params = this.getFilterParams();
+            const res = await fetch('api/geo.php?' + params.toString());
+            const data = await res.json();
+            if (!data.success) return;
+
+            this.geoData = data;
+            const subtitle = document.getElementById('geo-map-subtitle');
+            if (subtitle) {
+                const fmtN = n => Number(n).toLocaleString('pt-BR');
+                subtitle.textContent = `${fmtN(data.totalMunicipios)} municípios · ${fmtN(data.totalRegistros)} registros`;
+            }
+            this.renderGeoMarkers();
+        } catch (err) {
+            console.error('Erro ao carregar geo:', err);
+        }
+    },
+
+    renderGeoMarkers() {
+        if (!this.geoLayer || !this.geoData) return;
+        this.geoLayer.clearLayers();
+
+        const items = this.geoData.data;
+        if (!items.length) return;
+
+        const metric = this.geoMetric;
+        const values = items.map(d => d[metric]).filter(v => v > 0);
+        if (!values.length) return;
+
+        const maxVal = Math.max(...values);
+        const minVal = Math.min(...values);
+
+        const getColor = (val) => {
+            if (maxVal === minVal) return '#3498db';
+            const ratio = (val - minVal) / (maxVal - minVal);
+            if (ratio < 0.2) return '#3498db';
+            if (ratio < 0.4) return '#2ecc71';
+            if (ratio < 0.6) return '#f1c40f';
+            if (ratio < 0.8) return '#e67e22';
+            return '#e74c3c';
+        };
+
+        const getRadius = (val) => {
+            if (maxVal === minVal) return 8;
+            const ratio = (val - minVal) / (maxVal - minVal);
+            return 4 + ratio * 22;
+        };
+
+        const fmt = n => Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+
+        items.forEach(item => {
+            const val = item[metric] || 0;
+            if (val <= 0) return;
+
+            const circle = L.circleMarker([item.lat, item.lng], {
+                radius: getRadius(val),
+                fillColor: getColor(val),
+                color: getColor(val),
+                weight: 1,
+                opacity: 0.8,
+                fillOpacity: 0.55,
+            });
+
+            const metricLabels = { area: 'Área (ha)', producao: 'Produção (t)', registros: 'Registros' };
+            circle.bindPopup(
+                `<div style="font-family:Inter,sans-serif;font-size:13px;line-height:1.7;">` +
+                `<strong style="font-size:14px;">${item.municipio}</strong> - ${item.uf}<br>` +
+                `Área: <strong>${fmt(item.area)} ha</strong><br>` +
+                `Produção: <strong>${fmt(item.producao)} t</strong><br>` +
+                `Registros: <strong>${fmt(item.registros)}</strong><br>` +
+                `Cultivares: <strong>${item.cultivares}</strong>` +
+                `</div>`,
+                { closeButton: false, className: 'geo-popup' }
+            );
+
+            circle.bindTooltip(item.municipio, {
+                permanent: false,
+                direction: 'top',
+                offset: [0, -8],
+                className: 'geo-tooltip'
+            });
+
+            this.geoLayer.addLayer(circle);
+        });
+
+        // Legenda
+        const legend = document.getElementById('geo-legend');
+        if (legend) {
+            const metricLabels = { area: 'Área (ha)', producao: 'Produção (t)', registros: 'Registros' };
+            const fmtShort = (n) => {
+                if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+                if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+                return Math.round(n).toString();
+            };
+            legend.innerHTML = `
+                <span class="geo-legend-title">${metricLabels[metric]}</span>
+                <span class="geo-legend-label">${fmtShort(minVal)}</span>
+                <div class="geo-legend-gradient"></div>
+                <span class="geo-legend-label">${fmtShort(maxVal)}</span>
+            `;
+        }
     },
 
     // ===== COMPARISON =====

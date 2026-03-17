@@ -422,6 +422,35 @@ body {
 .metric-pill:hover { border-color: var(--accent); color: var(--text); }
 .metric-pill.active { background: var(--accent); border-color: var(--accent); color: white; }
 
+/* ===== GEO MAP ===== */
+.geo-map-widget { position: relative; }
+#geo-map { background: #1a1a2e; }
+#geo-map .leaflet-control-zoom a {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+#geo-map .leaflet-control-attribution { display: none; }
+.geo-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+.geo-legend-gradient {
+    width: 180px;
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #3498db, #2ecc71, #f1c40f, #e67e22, #e74c3c);
+}
+.geo-legend-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+.geo-legend-title { font-size: 0.72rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 8px; }
+
 /* ===== TABLE ===== */
 .table-wrapper { overflow-x: auto; border-radius: var(--radius-sm); }
 
