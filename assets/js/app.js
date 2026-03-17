@@ -200,28 +200,12 @@ const App = {
 
             this.populateMultiSelect('safra', data.filters.safras);
             this.populateMultiSelect('especie', data.filters.especies);
+            this.populateMultiSelect('cultivar', data.filters.cultivares);
             this.populateMultiSelect('categoria', data.filters.categorias);
             this.populateMultiSelect('uf', data.filters.estados);
             this.populateMultiSelect('status', data.filters.statuses);
-
-            // Load cultivares
-            await this.loadCultivares();
         } catch (err) {
             console.error('Erro ao carregar filtros:', err);
-        }
-    },
-
-    async loadCultivares() {
-        try {
-            const params = this.getFilterParams();
-            params.set('type', 'cultivares');
-            const res = await fetch('api/stats.php?' + params.toString());
-            const data = await res.json();
-            if (data.success) {
-                this.populateMultiSelect('cultivar', data.data);
-            }
-        } catch (err) {
-            console.error('Erro ao carregar cultivares:', err);
         }
     },
 

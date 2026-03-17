@@ -20,6 +20,9 @@ try {
     $statuses = $pdo->query("SELECT DISTINCT status_registro FROM dados_campo WHERE status_registro IS NOT NULL ORDER BY status_registro")
                     ->fetchAll(PDO::FETCH_COLUMN);
 
+    $cultivares = $pdo->query("SELECT DISTINCT cultivar FROM dados_campo WHERE cultivar IS NOT NULL ORDER BY cultivar")
+                      ->fetchAll(PDO::FETCH_COLUMN);
+
     $stats = $pdo->query("
         SELECT
             COUNT(*) as total_registros,
@@ -40,6 +43,7 @@ try {
             'categorias' => $categorias,
             'estados'    => $estados,
             'statuses'   => $statuses,
+            'cultivares' => $cultivares,
         ],
         'stats' => $stats,
     ], JSON_UNESCAPED_UNICODE);
